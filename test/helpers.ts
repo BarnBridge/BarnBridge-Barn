@@ -2,18 +2,18 @@
 // @ts-ignore
 import { ethers } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
-import { Erc20Mock, VoteLock } from '../typechain';
+import { Erc20Mock, Barn } from '../typechain';
 
 export const stakingEpochStart = 1603065600;
 export const stakingEpochDuration = 604800;
 export const tenPow18 = BigNumber.from(10).pow(18);
 
-export async function deployVoteLock (bond:string, cv:string, treasury:string): Promise<VoteLock> {
-    const VoteLock: ContractFactory = await ethers.getContractFactory('VoteLock');
-    const lock: VoteLock = (await VoteLock.deploy(bond, cv, treasury)) as VoteLock;
-    await lock.deployed();
+export async function deployBarn (bond:string, cv:string, treasury:string): Promise<Barn> {
+    const BarnFactory: ContractFactory = await ethers.getContractFactory('Barn');
+    const barn: Barn = (await BarnFactory.deploy(bond, cv, treasury)) as Barn;
+    await barn.deployed();
 
-    return lock;
+    return barn;
 }
 
 export async function deployBond ():Promise<Erc20Mock> {

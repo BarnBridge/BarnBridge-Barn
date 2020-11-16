@@ -20,7 +20,7 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface VoteLockInterface extends ethers.utils.Interface {
+interface BarnInterface extends ethers.utils.Interface {
   functions: {
     "MAX_LOCK()": FunctionFragment;
     "balanceAtTs(address,uint256)": FunctionFragment;
@@ -37,7 +37,6 @@ interface VoteLockInterface extends ethers.utils.Interface {
     "multiplierAtTs(address,uint256)": FunctionFragment;
     "stakeAtTs(address,uint256)": FunctionFragment;
     "stopDelegate()": FunctionFragment;
-    "totalVotingPowerAtTs(uint256)": FunctionFragment;
     "userDelegatedTo(address)": FunctionFragment;
     "userLockedUntil(address)": FunctionFragment;
     "votingPower(address)": FunctionFragment;
@@ -92,10 +91,6 @@ interface VoteLockInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "stopDelegate",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "totalVotingPowerAtTs",
-    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "userDelegatedTo",
@@ -155,10 +150,6 @@ interface VoteLockInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "totalVotingPowerAtTs",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "userDelegatedTo",
     data: BytesLike
   ): Result;
@@ -179,7 +170,7 @@ interface VoteLockInterface extends ethers.utils.Interface {
   events: {};
 }
 
-export class VoteLock extends Contract {
+export class Barn extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -190,7 +181,7 @@ export class VoteLock extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: VoteLockInterface;
+  interface: BarnInterface;
 
   functions: {
     MAX_LOCK(
@@ -395,20 +386,6 @@ export class VoteLock extends Contract {
     stopDelegate(overrides?: Overrides): Promise<ContractTransaction>;
 
     "stopDelegate()"(overrides?: Overrides): Promise<ContractTransaction>;
-
-    totalVotingPowerAtTs(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
-    "totalVotingPowerAtTs(uint256)"(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
 
     userDelegatedTo(
       user: string,
@@ -624,16 +601,6 @@ export class VoteLock extends Contract {
 
   "stopDelegate()"(overrides?: Overrides): Promise<ContractTransaction>;
 
-  totalVotingPowerAtTs(
-    timestamp: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  "totalVotingPowerAtTs(uint256)"(
-    timestamp: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   userDelegatedTo(user: string, overrides?: CallOverrides): Promise<string>;
 
   "userDelegatedTo(address)"(
@@ -814,16 +781,6 @@ export class VoteLock extends Contract {
 
     "stopDelegate()"(overrides?: CallOverrides): Promise<void>;
 
-    totalVotingPowerAtTs(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "totalVotingPowerAtTs(uint256)"(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     userDelegatedTo(user: string, overrides?: CallOverrides): Promise<string>;
 
     "userDelegatedTo(address)"(
@@ -988,16 +945,6 @@ export class VoteLock extends Contract {
     stopDelegate(overrides?: Overrides): Promise<BigNumber>;
 
     "stopDelegate()"(overrides?: Overrides): Promise<BigNumber>;
-
-    totalVotingPowerAtTs(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "totalVotingPowerAtTs(uint256)"(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     userDelegatedTo(
       user: string,
@@ -1183,16 +1130,6 @@ export class VoteLock extends Contract {
     stopDelegate(overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "stopDelegate()"(overrides?: Overrides): Promise<PopulatedTransaction>;
-
-    totalVotingPowerAtTs(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "totalVotingPowerAtTs(uint256)"(
-      timestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
 
     userDelegatedTo(
       user: string,
