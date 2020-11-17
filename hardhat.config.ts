@@ -28,7 +28,7 @@ const cfg: HardhatUserConfig = {
     etherscan: config.etherscan,
 
     abiExporter: {
-        only: ['BarnBridgeDAO'],
+        only: ['Barn'],
         clear: true,
     },
 };

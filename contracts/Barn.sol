@@ -2,13 +2,13 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
-import "./interfaces/IVoteLock.sol";
+import "./interfaces/IBarn.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // todo: TBD if we want to add something like `depositAndLock` to avoid making 2 transactions to lock some BOND
-contract VoteLock is IVoteLock {
+contract Barn is IBarn {
     using SafeMath for uint256;
 
     uint256 constant TOTAL_VESTING_BOND = 2_200_000e18;
@@ -21,13 +21,6 @@ contract VoteLock is IVoteLock {
     uint256 constant public MAX_LOCK = 365 days;
 
     uint256 constant BASE_MULTIPLIER = 1e18;
-
-    struct Stake {
-        uint256 timestamp;
-        uint256 amount;
-        uint256 expiryTimestamp;
-        address delegatedTo;
-    }
 
     mapping(address => Stake[]) userStakeHistory;
 
@@ -131,12 +124,6 @@ contract VoteLock is IVoteLock {
         // todo
     }
 
-    // totalVotingPowerAtTs returns the total voting power at a point in time (equivalent to totalSupply)
-    function totalVotingPowerAtTs(uint256 timestamp) override public view returns (uint256) {
-        return 0;
-        // todo
-    }
-
     // bondCirculatingSupply returns the current circulating supply of BOND
     function bondCirculatingSupply() override public view returns (uint256) {
         uint256 completedVestingEpochs = (block.timestamp - VESTING_START) / VESTING_EPOCH_DURATION;
@@ -152,7 +139,7 @@ contract VoteLock is IVoteLock {
     }
 
     // balanceOf returns the current BOND balance of a user (bonus not included)
-    function balanceOf(address user) public view returns (uint256) {
+    function balanceOf(address user) override public view returns (uint256) {
         return balanceAtTs(user, block.timestamp);
     }
 
@@ -163,8 +150,8 @@ contract VoteLock is IVoteLock {
         return stake.amount;
     }
 
-    // stakeAtTs returns the Checkpoint object of the user that was valid at `timestamp`
-    function stakeAtTs(address user, uint256 timestamp) public view returns (Stake memory) {
+    // stakeAtTs returns the Stake object of the user that was valid at `timestamp`
+    function stakeAtTs(address user, uint256 timestamp) override public view returns (Stake memory) {
         Stake[] storage checkpoints = userStakeHistory[user];
 
         if (checkpoints.length == 0 || timestamp < checkpoints[0].timestamp) {
@@ -192,7 +179,7 @@ contract VoteLock is IVoteLock {
     }
 
     // votingPower returns the voting power (bonus included) + delegated voting power for a user at the current block
-    function votingPower(address user) public view returns (uint256) {
+    function votingPower(address user) override public view returns (uint256) {
         return votingPowerAtTs(user, block.timestamp);
     }
 
@@ -217,13 +204,13 @@ contract VoteLock is IVoteLock {
     }
 
     // bondStaked returns the total raw amount of BOND staked at the current block
-    function bondStaked() public view returns (uint256) {
+    function bondStaked() override public view returns (uint256) {
         return bondStakedAtTs(block.timestamp);
     }
 
     // bondStakedAtTs returns the total raw amount of BOND users have deposited into the contract
     // it does not include any bonus
-    function bondStakedAtTs(uint256 timestamp) public view returns (uint256) {
+    function bondStakedAtTs(uint256 timestamp) override public view returns (uint256) {
         if (bondStakedHistory.length == 0 || timestamp < bondStakedHistory[0].timestamp) {
             return 0;
         }
@@ -249,12 +236,12 @@ contract VoteLock is IVoteLock {
     }
 
     // delegatedPower returns the total voting power that a user received from other users
-    function delegatedPower(address user) public view returns (uint256) {
+    function delegatedPower(address user) override public view returns (uint256) {
         return delegatedPowerAtTs(user, block.timestamp);
     }
 
     // delegatedPowerAtTs returns the total voting power that a user received from other users at a point in time
-    function delegatedPowerAtTs(address user, uint256 timestamp) public view returns (uint256) {
+    function delegatedPowerAtTs(address user, uint256 timestamp) override public view returns (uint256) {
         Checkpoint[] storage checkpoints = delegatedPowerHistory[user];
 
         if (checkpoints.length == 0 || timestamp < checkpoints[0].timestamp) {
@@ -283,7 +270,7 @@ contract VoteLock is IVoteLock {
 
     // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
     // it includes the decay mechanism
-    function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
+    function multiplierAtTs(address user, uint256 timestamp) override public view returns (uint256) {
         Stake memory stake = stakeAtTs(user, timestamp);
 
         if (timestamp >= stake.expiryTimestamp) {
@@ -299,14 +286,14 @@ contract VoteLock is IVoteLock {
     }
 
     // userLockedUntil returns the timestamp until the user's balance is locked
-    function userLockedUntil(address user) public view returns (uint256) {
+    function userLockedUntil(address user) override public view returns (uint256) {
         Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.expiryTimestamp;
     }
 
     // userDidDelegate returns the address to which a user delegated their voting power; address(0) if not delegated
-    function userDelegatedTo(address user) public view returns (address) {
+    function userDelegatedTo(address user) override public view returns (address) {
         Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.delegatedTo;
