@@ -15,13 +15,17 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface BarnInterface extends ethers.utils.Interface {
+interface LibDiamondInterface extends ethers.utils.Interface {
   functions: {};
 
-  events: {};
+  events: {
+    "DiamondCut(tuple[],address,bytes)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "DiamondCut"): EventFragment;
 }
 
-export class Barn extends Contract {
+export class LibDiamond extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -32,13 +36,15 @@ export class Barn extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: BarnInterface;
+  interface: LibDiamondInterface;
 
   functions: {};
 
   callStatic: {};
 
-  filters: {};
+  filters: {
+    DiamondCut(_diamondCut: null, _init: null, _calldata: null): EventFilter;
+  };
 
   estimateGas: {};
 
