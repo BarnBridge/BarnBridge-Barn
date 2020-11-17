@@ -2,14 +2,9 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
-interface IBarn {
-    struct Stake {
-        uint256 timestamp;
-        uint256 amount;
-        uint256 expiryTimestamp;
-        address delegatedTo;
-    }
+import "../libraries/LibBarnStorage.sol";
 
+interface IBarn {
     // deposit allows a user to add more bond to his staked balance
     function deposit(uint256 amount) external;
 
@@ -35,7 +30,7 @@ interface IBarn {
     function balanceAtTs(address user, uint256 timestamp) external view returns (uint256);
 
     // stakeAtTs returns the Stake object of the user that was valid at `timestamp`
-    function stakeAtTs(address user, uint256 timestamp) external view returns (Stake memory);
+    function stakeAtTs(address user, uint256 timestamp) external view returns (LibBarnStorage.Stake memory);
 
     // votingPower returns the voting power (bonus included) + delegated voting power for a user at the current block
     function votingPower(address user) external view returns (uint256);

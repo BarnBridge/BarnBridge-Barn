@@ -15,13 +15,17 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface BarnInterface extends ethers.utils.Interface {
+interface LibOwnershipInterface extends ethers.utils.Interface {
   functions: {};
 
-  events: {};
+  events: {
+    "OwnershipTransferred(address,address)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
 
-export class Barn extends Contract {
+export class LibOwnership extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -32,13 +36,18 @@ export class Barn extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: BarnInterface;
+  interface: LibOwnershipInterface;
 
   functions: {};
 
   callStatic: {};
 
-  filters: {};
+  filters: {
+    OwnershipTransferred(
+      previousOwner: string | null,
+      newOwner: string | null
+    ): EventFilter;
+  };
 
   estimateGas: {};
 

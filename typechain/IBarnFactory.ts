@@ -264,7 +264,7 @@ const _abi = [
             type: "address",
           },
         ],
-        internalType: "struct IBarn.Stake",
+        internalType: "struct LibBarnStorage.Stake",
         name: "",
         type: "tuple",
       },

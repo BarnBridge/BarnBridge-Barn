@@ -2,16 +2,18 @@
 // @ts-ignore
 import { ethers } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
-import * as helpers from './helpers';
-import { setNextBlockTimestamp } from './helpers';
+import * as helpers from './helpers/helpers';
 import { expect } from 'chai';
-import { Erc20Mock, Barn } from '../typechain';
-import * as time from './time';
+import { BarnFacet, Erc20Mock } from '../typechain';
+import * as time from './helpers/time';
+import * as deploy from './helpers/deploy';
+import { deployBond } from './helpers/deploy';
+import { diamondAsFacet } from './helpers/diamond';
 
 describe('Barn', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let barn: Barn, bond: Erc20Mock;
+    let barn: BarnFacet, bond: Erc20Mock;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -20,21 +22,34 @@ describe('Barn', function () {
 
     let snapshotId: any;
 
+    before(async function () {
+        await setupSigners();
+        bond = await deployBond();
+
+        const cutFacet = await deploy.deployCut();
+        const loupeFacet = await deploy.deployLoupe();
+        const ownershipFacet = await deploy.deployOwnership();
+        const barnFacet = await deploy.deployContract('BarnFacet');
+        const diamond = await deploy.deployDiamond(
+            'Barn',
+            [cutFacet, loupeFacet, ownershipFacet, barnFacet],
+            user,
+        );
+
+        barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
+        await barn.initBarn(bond.address, await communityVault.getAddress(), await treasury.getAddress());
+    });
+
     beforeEach(async function () {
         snapshotId = await ethers.provider.send('evm_snapshot', []);
-
-        await setupSigners();
-        bond = await helpers.deployBond();
-
-        barn = await helpers.deployBarn(
-            bond.address,
-            await communityVault.getAddress(),
-            await treasury.getAddress()
-        );
     });
 
     afterEach(async function () {
+        const ts = await helpers.getLatestBlockTimestamp();
+
         await ethers.provider.send('evm_revert', [snapshotId]);
+
+        await helpers.moveAtTimestamp(ts+5);
     });
 
     describe('General tests', function () {
@@ -333,7 +348,7 @@ describe('Barn', function () {
             await prepareAccount(user, amount);
             await barn.connect(user).deposit(amount);
 
-            let ts: number = time.getUnixTimestamp();
+            let ts: number = await helpers.getLatestBlockTimestamp();
             await helpers.setNextBlockTimestamp(ts + 5);
 
             const lockExpiryTs = ts + 5 + time.year;
@@ -382,7 +397,7 @@ describe('Barn', function () {
 
             const firstDepositTs = await helpers.getLatestBlockTimestamp();
 
-            await helpers.setNextBlockTimestamp(time.futureTimestamp(30 * time.day));
+            await helpers.setNextBlockTimestamp(firstDepositTs + 30 * time.day);
             await barn.connect(user).deposit(amount);
 
             const secondDepositTs = await helpers.getLatestBlockTimestamp();
@@ -426,7 +441,7 @@ describe('Barn', function () {
             const ts = await helpers.getLatestBlockTimestamp();
             const startTs = ts + 10;
 
-            await setNextBlockTimestamp(startTs);
+            await helpers.setNextBlockTimestamp(startTs);
             const expiryTs = startTs + time.year;
             await barn.connect(user).lock(expiryTs);
 
@@ -555,9 +570,9 @@ describe('Barn', function () {
             await barn.connect(user).stopDelegate();
             const stopTs = await helpers.getLatestBlockTimestamp();
 
-            expect(await barn.votingPowerAtTs(happyPirateAddress, delegateTs-1)).to.be.equal(0);
-            expect(await barn.votingPowerAtTs(happyPirateAddress, stopTs-1)).to.be.equal(amount);
-            expect(await barn.votingPowerAtTs(happyPirateAddress, stopTs+1)).to.be.equal(0);
+            expect(await barn.votingPowerAtTs(happyPirateAddress, delegateTs - 1)).to.be.equal(0);
+            expect(await barn.votingPowerAtTs(happyPirateAddress, stopTs - 1)).to.be.equal(amount);
+            expect(await barn.votingPowerAtTs(happyPirateAddress, stopTs + 1)).to.be.equal(0);
         });
 
         it('does not change any other delegated balances for the delegatee', async function () {

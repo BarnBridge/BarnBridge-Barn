@@ -1,28 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { ethers } from 'hardhat';
-import { BigNumber, ContractFactory } from 'ethers';
-import { Erc20Mock, Barn } from '../typechain';
+import { BigNumber } from 'ethers';
 
 export const stakingEpochStart = 1603065600;
 export const stakingEpochDuration = 604800;
 export const tenPow18 = BigNumber.from(10).pow(18);
-
-export async function deployBarn (bond:string, cv:string, treasury:string): Promise<Barn> {
-    const BarnFactory: ContractFactory = await ethers.getContractFactory('Barn');
-    const barn: Barn = (await BarnFactory.deploy(bond, cv, treasury)) as Barn;
-    await barn.deployed();
-
-    return barn;
-}
-
-export async function deployBond ():Promise<Erc20Mock> {
-    const ERC20Mock: ContractFactory = await ethers.getContractFactory('ERC20Mock');
-    const bond = (await ERC20Mock.deploy()) as Erc20Mock;
-    await bond.deployed();
-
-    return bond;
-}
 
 export async function getLatestBlock (): Promise<any> {
     return await ethers.provider.send('eth_getBlockByNumber', ['latest', false]);
