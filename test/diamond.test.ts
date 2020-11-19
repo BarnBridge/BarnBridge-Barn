@@ -110,7 +110,7 @@ describe('Diamond', function () {
 
             await expect(
                 cut.connect(acc).diamondCut(_diamondCut, zeroAddress, '0x')
-            ).to.be.revertedWith('LibDiamond: Must be contract owner');
+            ).to.be.revertedWith('Must be contract owner');
         });
 
         it('allows adding new functions', async function () {

@@ -8,6 +8,7 @@ import "../libraries/LibOwnership.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../libraries/LibOwnership.sol";
 
 // todo: TBD if we want to add something like `depositAndLock` to avoid making 2 transactions to lock some BOND
 contract BarnFacet is IBarn {
@@ -79,16 +80,7 @@ contract BarnFacet is IBarn {
 
     // lock a user's currently staked balance until timestamp & add the bonus to his voting power
     function lock(uint256 timestamp) override public {
-        require(timestamp <= block.timestamp + MAX_LOCK, "Timestamp too big");
-        require(balanceOf(msg.sender) > 0, "Sender has no balance");
-
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[msg.sender];
-        LibBarnStorage.Stake storage currentStake = checkpoints[checkpoints.length - 1];
-
-        require(timestamp > currentStake.expiryTimestamp, "New timestamp lower than current lock timestamp");
-
-        _updateUserLock(checkpoints, timestamp);
+        _lock(msg.sender, timestamp);
     }
 
     // delegate allows a user to delegate his voting power to another user
@@ -99,6 +91,8 @@ contract BarnFacet is IBarn {
         require(senderBalance > 0, "No balance to delegate");
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        require(ds.delegateLock[msg.sender] < block.timestamp, "Delegate temporarily locked for proposal creator");
+
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
             _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], delegatedPower(delegatedTo).sub(senderBalance));
@@ -118,7 +112,12 @@ contract BarnFacet is IBarn {
 
     // lock the balance of a proposal creator until the voting ends; only callable by DAO
     function lockCreatorBalance(address user, uint256 timestamp) override public {
-        // todo
+        LibOwnership.enforceIsContractOwner();
+
+        _lock(user, timestamp);
+
+        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        ds.delegateLock[user] = timestamp;
     }
 
     // bondCirculatingSupply returns the current circulating supply of BOND
@@ -299,6 +298,27 @@ contract BarnFacet is IBarn {
         LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.delegatedTo;
+    }
+
+    // userDelegateLockedUntil returns the timestamp until a user's delegate feature is disabled;
+    // if the timestamp is in the past (or equal to 0), the feature is considered enabled
+    function userDelegateLockedUntil(address user) public view returns (uint256) {
+        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+
+        return ds.delegateLock[user];
+    }
+
+    function _lock(address user, uint256 timestamp) internal {
+        require(timestamp <= block.timestamp + MAX_LOCK, "Timestamp too big");
+        require(balanceOf(user) > 0, "Sender has no balance");
+
+        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[user];
+        LibBarnStorage.Stake storage currentStake = checkpoints[checkpoints.length - 1];
+
+        require(timestamp > currentStake.expiryTimestamp, "New timestamp lower than current lock timestamp");
+
+        _updateUserLock(checkpoints, timestamp);
     }
 
     // _updateUserBalance manages an array of checkpoints

@@ -38,6 +38,7 @@ interface BarnFacetInterface extends ethers.utils.Interface {
     "multiplierAtTs(address,uint256)": FunctionFragment;
     "stakeAtTs(address,uint256)": FunctionFragment;
     "stopDelegate()": FunctionFragment;
+    "userDelegateLockedUntil(address)": FunctionFragment;
     "userDelegatedTo(address)": FunctionFragment;
     "userLockedUntil(address)": FunctionFragment;
     "votingPower(address)": FunctionFragment;
@@ -98,6 +99,10 @@ interface BarnFacetInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "userDelegateLockedUntil",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "userDelegatedTo",
     values: [string]
   ): string;
@@ -153,6 +158,10 @@ interface BarnFacetInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "stakeAtTs", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "stopDelegate",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "userDelegateLockedUntil",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -407,6 +416,20 @@ export class BarnFacet extends Contract {
 
     "stopDelegate()"(overrides?: Overrides): Promise<ContractTransaction>;
 
+    userDelegateLockedUntil(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "userDelegateLockedUntil(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
     userDelegatedTo(
       user: string,
       overrides?: CallOverrides
@@ -635,6 +658,16 @@ export class BarnFacet extends Contract {
 
   "stopDelegate()"(overrides?: Overrides): Promise<ContractTransaction>;
 
+  userDelegateLockedUntil(
+    user: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  "userDelegateLockedUntil(address)"(
+    user: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   userDelegatedTo(user: string, overrides?: CallOverrides): Promise<string>;
 
   "userDelegatedTo(address)"(
@@ -829,6 +862,16 @@ export class BarnFacet extends Contract {
 
     "stopDelegate()"(overrides?: CallOverrides): Promise<void>;
 
+    userDelegateLockedUntil(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "userDelegateLockedUntil(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     userDelegatedTo(user: string, overrides?: CallOverrides): Promise<string>;
 
     "userDelegatedTo(address)"(
@@ -1007,6 +1050,16 @@ export class BarnFacet extends Contract {
     stopDelegate(overrides?: Overrides): Promise<BigNumber>;
 
     "stopDelegate()"(overrides?: Overrides): Promise<BigNumber>;
+
+    userDelegateLockedUntil(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "userDelegateLockedUntil(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     userDelegatedTo(
       user: string,
@@ -1206,6 +1259,16 @@ export class BarnFacet extends Contract {
     stopDelegate(overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "stopDelegate()"(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    userDelegateLockedUntil(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "userDelegateLockedUntil(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     userDelegatedTo(
       user: string,
