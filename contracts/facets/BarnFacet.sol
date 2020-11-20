@@ -149,6 +149,8 @@ contract BarnFacet is IBarn {
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         ds.delegateLock[user] = timestamp;
+
+        emit LockCreatorBalance(user, timestamp);
     }
 
     // bondCirculatingSupply returns the current circulating supply of BOND
