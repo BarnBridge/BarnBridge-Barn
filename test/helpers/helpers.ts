@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { ethers } from 'hardhat';
-import { BigNumber } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 
 export const stakingEpochStart = 1603065600;
 export const stakingEpochDuration = 604800;
@@ -35,4 +35,8 @@ export async function getCurrentEpoch (): Promise<number> {
     }
 
     return Math.floor((currentBlockTs - stakingEpochStart) / stakingEpochDuration) + 1;
+}
+
+export async function contractAt (name: string, address: string): Promise<Contract> {
+    return await ethers.getContractAt(name, address);
 }

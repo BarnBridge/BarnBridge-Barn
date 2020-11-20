@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import { ethers } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
@@ -7,7 +5,6 @@ import { expect } from 'chai';
 import { BarnFacet, Erc20Mock } from '../typechain';
 import * as time from './helpers/time';
 import * as deploy from './helpers/deploy';
-import { deployBond } from './helpers/deploy';
 import { diamondAsFacet } from './helpers/diamond';
 
 describe('Barn', function () {
@@ -24,16 +21,16 @@ describe('Barn', function () {
 
     before(async function () {
         await setupSigners();
-        bond = await deployBond();
+        bond = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
 
-        const cutFacet = await deploy.deployCut();
-        const loupeFacet = await deploy.deployLoupe();
-        const ownershipFacet = await deploy.deployOwnership();
+        const cutFacet = await deploy.deployContract('DiamondCutFacet');
+        const loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
+        const ownershipFacet = await deploy.deployContract('OwnershipFacet');
         const barnFacet = await deploy.deployContract('BarnFacet');
         const diamond = await deploy.deployDiamond(
             'Barn',
             [cutFacet, loupeFacet, ownershipFacet, barnFacet],
-            user,
+            userAddress,
         );
 
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;

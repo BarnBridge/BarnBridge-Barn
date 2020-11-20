@@ -16,13 +16,13 @@ describe('Diamond', function () {
         const signers = await ethers.getSigners();
         owner = signers[0];
 
-        cutFacet = await deploy.deployCut();
-        loupeFacet = await deploy.deployLoupe();
-        ownershipFacet = await deploy.deployOwnership();
+        cutFacet = await deploy.deployContract('DiamondCutFacet');
+        loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
+        ownershipFacet = await deploy.deployContract('OwnershipFacet');
         diamond = await deploy.deployDiamond(
             'Barn',
             [cutFacet, loupeFacet, ownershipFacet],
-            owner,
+            await owner.getAddress(),
         );
 
         loupe = (await diamondAsFacet(diamond, 'DiamondLoupeFacet')) as DiamondLoupeFacet;
