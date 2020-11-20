@@ -21,11 +21,11 @@ library LibOwnership {
     }
 
     function enforceIsContractOwner() view internal {
-        require(msg.sender == LibDiamondStorage.diamondStorage().contractOwner, "LibDiamond: Must be contract owner");
+        require(msg.sender == LibDiamondStorage.diamondStorage().contractOwner, "Must be contract owner");
     }
 
     modifier onlyOwner {
-        require(msg.sender == LibDiamondStorage.diamondStorage().contractOwner, "LibDiamond: Must be contract owner");
+        require(msg.sender == LibDiamondStorage.diamondStorage().contractOwner, "Must be contract owner");
         _;
     }
 }

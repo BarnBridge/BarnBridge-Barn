@@ -49,7 +49,7 @@ describe('Barn', function () {
 
         await ethers.provider.send('evm_revert', [snapshotId]);
 
-        await helpers.moveAtTimestamp(ts+5);
+        await helpers.moveAtTimestamp(ts + 5);
     });
 
     describe('General tests', function () {
@@ -589,6 +589,45 @@ describe('Barn', function () {
             await barn.connect(user).stopDelegate();
 
             expect(await barn.votingPower(flyingParrotAddress)).to.be.equal(amount);
+        });
+    });
+
+    describe('lockCreatorBalance', async function () {
+        it('reverts if not executed by owner', async function () {
+            const ts = await helpers.getLatestBlockTimestamp();
+            await expect(
+                barn.connect(happyPirate).lockCreatorBalance(flyingParrotAddress, ts + 3600)
+            ).to.be.revertedWith('Must be contract owner');
+        });
+
+        it('locks user balance and blocks the delegate feature', async function () {
+            await prepareAccount(happyPirate, amount);
+            await barn.connect(happyPirate).deposit(amount);
+
+            const ts = await helpers.getLatestBlockTimestamp();
+
+            await expect(
+                barn.connect(user).lockCreatorBalance(happyPirateAddress, ts + 3600)
+            ).to.not.be.reverted;
+
+            expect(await barn.userLockedUntil(happyPirateAddress)).to.equal(ts + 3600);
+            await expect(
+                barn.connect(happyPirate).delegate(flyingParrotAddress)
+            ).to.be.revertedWith('Delegate temporarily locked for proposal creator');
+            expect(await barn.userDelegateLockedUntil(happyPirateAddress)).to.equal(ts + 3600);
+        });
+
+        it('unlocks user balance after the time passed', async function () {
+            await prepareAccount(happyPirate, amount);
+            await barn.connect(happyPirate).deposit(amount);
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await barn.connect(user).lockCreatorBalance(happyPirateAddress, ts + 3600);
+
+            await helpers.moveAtTimestamp(ts + 3600 * 2);
+
+            await expect(barn.connect(happyPirate).delegate(flyingParrotAddress)).to.not.be.reverted;
+            await expect(barn.connect(happyPirate).withdraw(amount)).to.not.be.reverted;
         });
     });
 
