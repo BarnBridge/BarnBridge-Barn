@@ -182,7 +182,23 @@ interface BarnFacetInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
-  events: {};
+  events: {
+    "Delegate(address,address)": EventFragment;
+    "DelegatedPowerDecreased(address,address,uint256,uint256)": EventFragment;
+    "DelegatedPowerIncreased(address,address,uint256,uint256)": EventFragment;
+    "Deposit(address,uint256)": EventFragment;
+    "Lock(address,uint256)": EventFragment;
+    "LockCreatorBalance(address,uint256)": EventFragment;
+    "Withdraw(address,uint256,uint256)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "Delegate"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "DelegatedPowerDecreased"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "DelegatedPowerIncreased"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Deposit"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Lock"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "LockCreatorBalance"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Withdraw"): EventFragment;
 }
 
 export class BarnFacet extends Contract {
@@ -916,7 +932,35 @@ export class BarnFacet extends Contract {
     ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    Delegate(from: string | null, to: string | null): EventFilter;
+
+    DelegatedPowerDecreased(
+      from: string | null,
+      to: string | null,
+      amount: null,
+      to_newDelegatedPower: null
+    ): EventFilter;
+
+    DelegatedPowerIncreased(
+      from: string | null,
+      to: string | null,
+      amount: null,
+      to_newDelegatedPower: null
+    ): EventFilter;
+
+    Deposit(user: string | null, amount: null): EventFilter;
+
+    Lock(user: string | null, timestamp: null): EventFilter;
+
+    LockCreatorBalance(user: string | null, timestamp: null): EventFilter;
+
+    Withdraw(
+      user: string | null,
+      amountWithdrew: null,
+      amountLeft: null
+    ): EventFilter;
+  };
 
   estimateGas: {
     MAX_LOCK(overrides?: CallOverrides): Promise<BigNumber>;

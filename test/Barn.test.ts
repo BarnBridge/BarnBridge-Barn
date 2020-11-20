@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import { ethers } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
@@ -7,7 +5,6 @@ import { expect } from 'chai';
 import { BarnFacet, Erc20Mock } from '../typechain';
 import * as time from './helpers/time';
 import * as deploy from './helpers/deploy';
-import { deployBond } from './helpers/deploy';
 import { diamondAsFacet } from './helpers/diamond';
 
 describe('Barn', function () {
@@ -24,16 +21,16 @@ describe('Barn', function () {
 
     before(async function () {
         await setupSigners();
-        bond = await deployBond();
+        bond = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
 
-        const cutFacet = await deploy.deployCut();
-        const loupeFacet = await deploy.deployLoupe();
-        const ownershipFacet = await deploy.deployOwnership();
+        const cutFacet = await deploy.deployContract('DiamondCutFacet');
+        const loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
+        const ownershipFacet = await deploy.deployContract('OwnershipFacet');
         const barnFacet = await deploy.deployContract('BarnFacet');
         const diamond = await deploy.deployDiamond(
             'Barn',
             [cutFacet, loupeFacet, ownershipFacet, barnFacet],
-            user,
+            userAddress,
         );
 
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
@@ -628,6 +625,124 @@ describe('Barn', function () {
 
             await expect(barn.connect(happyPirate).delegate(flyingParrotAddress)).to.not.be.reverted;
             await expect(barn.connect(happyPirate).withdraw(amount)).to.not.be.reverted;
+        });
+
+        it('reverts if user tries to un-delegate from a locked user', async function () {
+            await prepareAccount(happyPirate, amount);
+            await barn.connect(happyPirate).deposit(amount);
+
+            await prepareAccount(flyingParrot, amount);
+            await barn.connect(flyingParrot).deposit(amount);
+
+            await barn.connect(happyPirate).delegate(flyingParrotAddress);
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await barn.connect(user).lockCreatorBalance(flyingParrotAddress, ts + 3600);
+
+            await expect(
+                barn.connect(happyPirate).stopDelegate()
+            ).to.be.revertedWith('Delegate temporarily locked due to active proposal');
+
+            await expect(
+                barn.connect(happyPirate).delegate(userAddress)
+            ).to.be.revertedWith('Delegate temporarily locked due to active proposal');
+        });
+
+        it('reverts if user tries to withdraw while his balance is delegated to a locked user', async function () {
+            await prepareAccount(happyPirate, amount);
+            await barn.connect(happyPirate).deposit(amount);
+
+            await prepareAccount(flyingParrot, amount);
+            await barn.connect(flyingParrot).deposit(amount);
+
+            await barn.connect(happyPirate).delegate(flyingParrotAddress);
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await barn.connect(user).lockCreatorBalance(flyingParrotAddress, ts + 3600);
+
+            await expect(
+                barn.connect(happyPirate).withdraw(amount)
+            ).to.be.revertedWith('Withdraw temporarily locked due to active proposal');
+        });
+    });
+
+    describe('events', async function () {
+        it('emits Deposit on call to deposit()', async function () {
+            await prepareAccount(happyPirate, amount);
+
+            await expect(barn.connect(happyPirate).deposit(amount))
+                .to.emit(barn, 'Deposit').and.not.emit(barn, 'DelegatedPowerIncreased');
+        });
+
+        it('emits Deposit & DelegatedPowerIncreased on call to deposit() with delegated power', async function () {
+            await prepareAccount(happyPirate, amount.mul(2));
+            await barn.connect(happyPirate).deposit(amount);
+
+            await barn.connect(happyPirate).delegate(flyingParrotAddress);
+
+            await expect(barn.connect(happyPirate).deposit(amount))
+                .to.emit(barn, 'Deposit')
+                .and.to.emit(barn, 'DelegatedPowerIncreased');
+        });
+
+        it('emits Withdraw on call to withdraw()', async function () {
+            await prepareAccount(happyPirate, amount.mul(2));
+            await barn.connect(happyPirate).deposit(amount);
+
+            await expect(barn.connect(happyPirate).withdraw(amount))
+                .to.emit(barn, 'Withdraw')
+                .and.not.to.emit(barn, 'DelegatedPowerDecreased');
+        });
+
+        it('emits Withdraw & DelegatedPowerDecreased on call to withdraw() with delegated power', async function () {
+            await prepareAccount(happyPirate, amount.mul(2));
+            await barn.connect(happyPirate).deposit(amount.mul(2));
+            await barn.connect(happyPirate).delegate(flyingParrotAddress);
+
+            await expect(barn.connect(happyPirate).withdraw(amount))
+                .to.emit(barn, 'Withdraw')
+                .and.to.emit(barn, 'DelegatedPowerDecreased');
+        });
+
+        it('emits correct events on delegate', async function () {
+            await prepareAccount(happyPirate, amount.mul(2));
+            await barn.connect(happyPirate).deposit(amount.mul(2));
+
+            // when a user delegates without currently delegating, we should see the following events
+            await expect(barn.connect(happyPirate).delegate(flyingParrotAddress))
+                .to.emit(barn, 'Delegate')
+                .and.to.emit(barn, 'DelegatedPowerIncreased')
+                .and.not.to.emit(barn, 'DelegatedPowerDecreased');
+
+            // when a user changes the user they delegate to, we should see the following events
+            await expect(barn.connect(happyPirate).delegate(userAddress))
+                .to.emit(barn, 'Delegate')
+                .and.to.emit(barn, 'DelegatedPowerIncreased')
+                .and.to.emit(barn, 'DelegatedPowerDecreased');
+
+            // on stopDelegate, it should emit a Delegate(user, address(0)) event
+            await expect(barn.connect(happyPirate).stopDelegate())
+                .to.emit(barn, 'Delegate')
+                .and.to.emit(barn, 'DelegatedPowerDecreased')
+                .and.not.to.emit(barn, 'DelegatedPowerIncreased');
+        });
+
+        it('emits Lock event on call to lock()', async function () {
+            await prepareAccount(happyPirate, amount.mul(2));
+            await barn.connect(happyPirate).deposit(amount.mul(2));
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await expect(barn.connect(happyPirate).lock(ts + 3600))
+                .to.emit(barn, 'Lock');
+        });
+
+        it('emits LockCreatorBalance on call to lockCreatorBalance()', async function () {
+            await prepareAccount(happyPirate, amount.mul(2));
+            await barn.connect(happyPirate).deposit(amount.mul(2));
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await expect(barn.connect(user).lockCreatorBalance(happyPirateAddress, ts + 3600))
+                .to.emit(barn, 'LockCreatorBalance');
         });
     });
 

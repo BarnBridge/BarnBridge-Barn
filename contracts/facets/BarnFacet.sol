@@ -8,7 +8,6 @@ import "../libraries/LibOwnership.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../libraries/LibOwnership.sol";
 
 // todo: TBD if we want to add something like `depositAndLock` to avoid making 2 transactions to lock some BOND
 contract BarnFacet is IBarn {
@@ -24,6 +23,14 @@ contract BarnFacet is IBarn {
     uint256 constant public MAX_LOCK = 365 days;
 
     uint256 constant BASE_MULTIPLIER = 1e18;
+
+    event Deposit(address indexed user, uint256 amount);
+    event Withdraw(address indexed user, uint256 amountWithdrew, uint256 amountLeft);
+    event Lock(address indexed user, uint256 timestamp);
+    event Delegate(address indexed from, address indexed to);
+    event DelegatedPowerIncreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
+    event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
+    event LockCreatorBalance(address indexed user, uint256 timestamp);
 
     function initBarn(address _bond, address _cv, address _treasury) public {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
@@ -52,10 +59,15 @@ contract BarnFacet is IBarn {
 
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
-            _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], delegatedPower(delegatedTo).add(amount));
+            uint256 newDelegatedPower = delegatedPower(delegatedTo).add(amount);
+            _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], newDelegatedPower);
+
+            emit DelegatedPowerIncreased(msg.sender, delegatedTo, amount, newDelegatedPower);
         }
 
         ds.bond.transferFrom(msg.sender, address(this), amount);
+
+        emit Deposit(msg.sender, amount);
     }
 
     // withdraw allows a user to withdraw funds if the balance is not locked
@@ -72,15 +84,24 @@ contract BarnFacet is IBarn {
 
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
-            _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], delegatedPower(delegatedTo).sub(amount));
+            require(ds.delegateLock[delegatedTo] < block.timestamp, "Withdraw temporarily locked due to active proposal");
+
+            uint256 newDelegatedPower = delegatedPower(delegatedTo).sub(amount);
+            _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], newDelegatedPower);
+
+            emit DelegatedPowerDecreased(msg.sender, delegatedTo, amount, newDelegatedPower);
         }
 
         ds.bond.transfer(msg.sender, amount);
+
+        emit Withdraw(msg.sender, amount, balance.sub(amount));
     }
 
     // lock a user's currently staked balance until timestamp & add the bonus to his voting power
     function lock(uint256 timestamp) override public {
         _lock(msg.sender, timestamp);
+
+        emit Lock(msg.sender, timestamp);
     }
 
     // delegate allows a user to delegate his voting power to another user
@@ -93,13 +114,23 @@ contract BarnFacet is IBarn {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         require(ds.delegateLock[msg.sender] < block.timestamp, "Delegate temporarily locked for proposal creator");
 
+        emit Delegate(msg.sender, to);
+
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
-            _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], delegatedPower(delegatedTo).sub(senderBalance));
+            require(ds.delegateLock[delegatedTo] < block.timestamp, "Delegate temporarily locked due to active proposal");
+
+            uint256 newDelegatedPower = delegatedPower(delegatedTo).sub(senderBalance);
+            _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], newDelegatedPower);
+
+            emit DelegatedPowerDecreased(msg.sender, delegatedTo, senderBalance, newDelegatedPower);
         }
 
         if (to != address(0)) {
-            _updateDelegatedPower(ds.delegatedPowerHistory[to], delegatedPower(to).add(senderBalance));
+            uint256 newDelegatedPower = delegatedPower(to).add(senderBalance);
+            _updateDelegatedPower(ds.delegatedPowerHistory[to], newDelegatedPower);
+
+            emit DelegatedPowerIncreased(msg.sender, to, senderBalance, newDelegatedPower);
         }
 
         _updateUserDelegatedTo(ds.userStakeHistory[msg.sender], to);
@@ -118,6 +149,8 @@ contract BarnFacet is IBarn {
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         ds.delegateLock[user] = timestamp;
+
+        emit LockCreatorBalance(user, timestamp);
     }
 
     // bondCirculatingSupply returns the current circulating supply of BOND
