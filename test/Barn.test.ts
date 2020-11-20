@@ -629,6 +629,44 @@ describe('Barn', function () {
             await expect(barn.connect(happyPirate).delegate(flyingParrotAddress)).to.not.be.reverted;
             await expect(barn.connect(happyPirate).withdraw(amount)).to.not.be.reverted;
         });
+
+        it('reverts if user tries to un-delegate from a locked user', async function () {
+            await prepareAccount(happyPirate, amount);
+            await barn.connect(happyPirate).deposit(amount);
+
+            await prepareAccount(flyingParrot, amount);
+            await barn.connect(flyingParrot).deposit(amount);
+
+            await barn.connect(happyPirate).delegate(flyingParrotAddress);
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await barn.connect(user).lockCreatorBalance(flyingParrotAddress, ts + 3600);
+
+            await expect(
+                barn.connect(happyPirate).stopDelegate()
+            ).to.be.revertedWith('Delegate temporarily locked due to active proposal');
+
+            await expect(
+                barn.connect(happyPirate).delegate(userAddress)
+            ).to.be.revertedWith('Delegate temporarily locked due to active proposal');
+        });
+
+        it('reverts if user tries to withdraw while his balance is delegated to a locked user', async function () {
+            await prepareAccount(happyPirate, amount);
+            await barn.connect(happyPirate).deposit(amount);
+
+            await prepareAccount(flyingParrot, amount);
+            await barn.connect(flyingParrot).deposit(amount);
+
+            await barn.connect(happyPirate).delegate(flyingParrotAddress);
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await barn.connect(user).lockCreatorBalance(flyingParrotAddress, ts + 3600);
+
+            await expect(
+                barn.connect(happyPirate).withdraw(amount)
+            ).to.be.revertedWith('Withdraw temporarily locked due to active proposal');
+        });
     });
 
     async function setupSigners () {
