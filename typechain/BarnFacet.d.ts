@@ -32,6 +32,7 @@ interface BarnFacetInterface extends ethers.utils.Interface {
     "delegatedPower(address)": FunctionFragment;
     "delegatedPowerAtTs(address,uint256)": FunctionFragment;
     "deposit(uint256)": FunctionFragment;
+    "depositAndLock(uint256,uint256)": FunctionFragment;
     "initBarn(address,address,address)": FunctionFragment;
     "lock(uint256)": FunctionFragment;
     "lockCreatorBalance(address,uint256)": FunctionFragment;
@@ -76,6 +77,10 @@ interface BarnFacetInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "deposit",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "depositAndLock",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "initBarn",
@@ -145,6 +150,10 @@ interface BarnFacetInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "depositAndLock",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "initBarn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "lock", data: BytesLike): Result;
   decodeFunctionResult(
@@ -339,6 +348,18 @@ export class BarnFacet extends Contract {
 
     "deposit(uint256)"(
       amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    depositAndLock(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "depositAndLock(uint256,uint256)"(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
@@ -592,6 +613,18 @@ export class BarnFacet extends Contract {
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
+  depositAndLock(
+    amount: BigNumberish,
+    timestamp: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "depositAndLock(uint256,uint256)"(
+    amount: BigNumberish,
+    timestamp: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
   initBarn(
     _bond: string,
     _cv: string,
@@ -796,6 +829,18 @@ export class BarnFacet extends Contract {
 
     "deposit(uint256)"(
       amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    depositAndLock(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "depositAndLock(uint256,uint256)"(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1034,6 +1079,18 @@ export class BarnFacet extends Contract {
       overrides?: Overrides
     ): Promise<BigNumber>;
 
+    depositAndLock(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "depositAndLock(uint256,uint256)"(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
     initBarn(
       _bond: string,
       _cv: string,
@@ -1237,6 +1294,18 @@ export class BarnFacet extends Contract {
 
     "deposit(uint256)"(
       amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    depositAndLock(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "depositAndLock(uint256,uint256)"(
+      amount: BigNumberish,
+      timestamp: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 

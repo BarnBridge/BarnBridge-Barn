@@ -99,6 +99,17 @@ describe('Barn', function () {
         });
     });
 
+    describe('depositAndLock', function () {
+        it('calls deposit and then lock', async function () {
+            await prepareAccount(user, amount.mul(2));
+
+            const ts = await helpers.getLatestBlockTimestamp();
+            await expect(barn.connect(user).depositAndLock(amount, ts+3600)).to.not.be.reverted;
+            expect(await barn.balanceOf(userAddress)).to.equal(amount);
+            expect(await barn.userLockedUntil(userAddress)).to.equal(ts+3600);
+        });
+    });
+
     describe('balanceAtTs', function () {
         it('returns 0 if no checkpoint', async function () {
             const ts = await helpers.getLatestBlockTimestamp();

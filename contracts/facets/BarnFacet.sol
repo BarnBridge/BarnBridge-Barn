@@ -9,7 +9,6 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// todo: TBD if we want to add something like `depositAndLock` to avoid making 2 transactions to lock some BOND
 contract BarnFacet is IBarn {
     using SafeMath for uint256;
 
@@ -102,6 +101,11 @@ contract BarnFacet is IBarn {
         _lock(msg.sender, timestamp);
 
         emit Lock(msg.sender, timestamp);
+    }
+
+    function depositAndLock(uint256 amount, uint256 timestamp) public {
+        deposit(amount);
+        lock(timestamp);
     }
 
     // delegate allows a user to delegate his voting power to another user
