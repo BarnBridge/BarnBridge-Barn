@@ -21,7 +21,6 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface DiamondLoupeFacetInterface extends ethers.utils.Interface {
   functions: {
-    "c_0x5ee59a0e(bytes32)": FunctionFragment;
     "facetAddress(bytes4)": FunctionFragment;
     "facetAddresses()": FunctionFragment;
     "facetFunctionSelectors(address)": FunctionFragment;
@@ -29,10 +28,6 @@ interface DiamondLoupeFacetInterface extends ethers.utils.Interface {
     "supportsInterface(bytes4)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0x5ee59a0e",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "facetAddress",
     values: [BytesLike]
@@ -51,10 +46,6 @@ interface DiamondLoupeFacetInterface extends ethers.utils.Interface {
     values: [BytesLike]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "c_0x5ee59a0e",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "facetAddress",
     data: BytesLike
@@ -90,20 +81,6 @@ export class DiamondLoupeFacet extends Contract {
   interface: DiamondLoupeFacetInterface;
 
   functions: {
-    c_0x5ee59a0e(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
-    "c_0x5ee59a0e(bytes32)"(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
     facetAddress(
       _functionSelector: BytesLike,
       overrides?: CallOverrides
@@ -199,16 +176,6 @@ export class DiamondLoupeFacet extends Contract {
     }>;
   };
 
-  c_0x5ee59a0e(
-    c__0x5ee59a0e: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  "c_0x5ee59a0e(bytes32)"(
-    c__0x5ee59a0e: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   facetAddress(
     _functionSelector: BytesLike,
     overrides?: CallOverrides
@@ -266,16 +233,6 @@ export class DiamondLoupeFacet extends Contract {
   ): Promise<boolean>;
 
   callStatic: {
-    c_0x5ee59a0e(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "c_0x5ee59a0e(bytes32)"(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     facetAddress(
       _functionSelector: BytesLike,
       overrides?: CallOverrides
@@ -336,16 +293,6 @@ export class DiamondLoupeFacet extends Contract {
   filters: {};
 
   estimateGas: {
-    c_0x5ee59a0e(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "c_0x5ee59a0e(bytes32)"(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     facetAddress(
       _functionSelector: BytesLike,
       overrides?: CallOverrides
@@ -386,16 +333,6 @@ export class DiamondLoupeFacet extends Contract {
   };
 
   populateTransaction: {
-    c_0x5ee59a0e(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "c_0x5ee59a0e(bytes32)"(
-      c__0x5ee59a0e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     facetAddress(
       _functionSelector: BytesLike,
       overrides?: CallOverrides

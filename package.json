@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "compile": "hardhat compile",
+    "compile": "hardhat clean && hardhat compile",
     "test": "hardhat test",
-    "coverage": "npx hardhat coverage --no-typechain",
+    "coverage": "hardhat coverage --temp artifacts",
     "lint": "yarn run lint:ts && npm run lint:sol",
     "lint:fix": "yarn run lint:ts:fix",
     "lint:ts": "eslint . --ext .ts",

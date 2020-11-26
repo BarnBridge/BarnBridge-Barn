@@ -22,7 +22,6 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface Test1FacetInterface extends ethers.utils.Interface {
   functions: {
-    "c_0xf96e4b12(bytes32)": FunctionFragment;
     "test1Func1()": FunctionFragment;
     "test1Func10()": FunctionFragment;
     "test1Func11()": FunctionFragment;
@@ -45,10 +44,6 @@ interface Test1FacetInterface extends ethers.utils.Interface {
     "test1Func9()": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0xf96e4b12",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "test1Func1",
     values?: undefined
@@ -130,10 +125,6 @@ interface Test1FacetInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "c_0xf96e4b12",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "test1Func1", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "test1Func10",
@@ -209,20 +200,6 @@ export class Test1Facet extends Contract {
   interface: Test1FacetInterface;
 
   functions: {
-    c_0xf96e4b12(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
-    "c_0xf96e4b12(bytes32)"(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
     test1Func1(overrides?: Overrides): Promise<ContractTransaction>;
 
     "test1Func1()"(overrides?: Overrides): Promise<ContractTransaction>;
@@ -303,16 +280,6 @@ export class Test1Facet extends Contract {
 
     "test1Func9()"(overrides?: Overrides): Promise<ContractTransaction>;
   };
-
-  c_0xf96e4b12(
-    c__0xf96e4b12: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  "c_0xf96e4b12(bytes32)"(
-    c__0xf96e4b12: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
 
   test1Func1(overrides?: Overrides): Promise<ContractTransaction>;
 
@@ -395,16 +362,6 @@ export class Test1Facet extends Contract {
   "test1Func9()"(overrides?: Overrides): Promise<ContractTransaction>;
 
   callStatic: {
-    c_0xf96e4b12(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "c_0xf96e4b12(bytes32)"(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     test1Func1(overrides?: CallOverrides): Promise<void>;
 
     "test1Func1()"(overrides?: CallOverrides): Promise<void>;
@@ -491,16 +448,6 @@ export class Test1Facet extends Contract {
   };
 
   estimateGas: {
-    c_0xf96e4b12(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "c_0xf96e4b12(bytes32)"(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     test1Func1(overrides?: Overrides): Promise<BigNumber>;
 
     "test1Func1()"(overrides?: Overrides): Promise<BigNumber>;
@@ -583,16 +530,6 @@ export class Test1Facet extends Contract {
   };
 
   populateTransaction: {
-    c_0xf96e4b12(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "c_0xf96e4b12(bytes32)"(
-      c__0xf96e4b12: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     test1Func1(overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "test1Func1()"(overrides?: Overrides): Promise<PopulatedTransaction>;

@@ -22,14 +22,9 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface DiamondCutFacetInterface extends ethers.utils.Interface {
   functions: {
-    "c_0xc0121af6(bytes32)": FunctionFragment;
     "diamondCut(tuple[],address,bytes)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0xc0121af6",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "diamondCut",
     values: [
@@ -43,10 +38,6 @@ interface DiamondCutFacetInterface extends ethers.utils.Interface {
     ]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "c_0xc0121af6",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "diamondCut", data: BytesLike): Result;
 
   events: {
@@ -70,20 +61,6 @@ export class DiamondCutFacet extends Contract {
   interface: DiamondCutFacetInterface;
 
   functions: {
-    c_0xc0121af6(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
-    "c_0xc0121af6(bytes32)"(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
     diamondCut(
       _diamondCut: {
         facetAddress: string;
@@ -106,16 +83,6 @@ export class DiamondCutFacet extends Contract {
       overrides?: Overrides
     ): Promise<ContractTransaction>;
   };
-
-  c_0xc0121af6(
-    c__0xc0121af6: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  "c_0xc0121af6(bytes32)"(
-    c__0xc0121af6: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
 
   diamondCut(
     _diamondCut: {
@@ -140,16 +107,6 @@ export class DiamondCutFacet extends Contract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    c_0xc0121af6(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "c_0xc0121af6(bytes32)"(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     diamondCut(
       _diamondCut: {
         facetAddress: string;
@@ -178,16 +135,6 @@ export class DiamondCutFacet extends Contract {
   };
 
   estimateGas: {
-    c_0xc0121af6(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "c_0xc0121af6(bytes32)"(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     diamondCut(
       _diamondCut: {
         facetAddress: string;
@@ -212,16 +159,6 @@ export class DiamondCutFacet extends Contract {
   };
 
   populateTransaction: {
-    c_0xc0121af6(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "c_0xc0121af6(bytes32)"(
-      c__0xc0121af6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     diamondCut(
       _diamondCut: {
         facetAddress: string;
