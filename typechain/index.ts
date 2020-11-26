@@ -23,5 +23,3 @@ export { Test1FacetFactory } from "./Test1FacetFactory";
 export type { Test1Facet } from "./Test1Facet";
 export { Test2FacetFactory } from "./Test2FacetFactory";
 export type { Test2Facet } from "./Test2Facet";
-export { RewardsFactory } from "./RewardsFactory";
-export type { Rewards } from "./Rewards";
