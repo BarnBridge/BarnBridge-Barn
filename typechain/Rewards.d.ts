@@ -22,30 +22,117 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface RewardsInterface extends ethers.utils.Interface {
   functions: {
+    "ackFunds()": FunctionFragment;
+    "barn()": FunctionFragment;
+    "lastPullTs()": FunctionFragment;
     "owner()": FunctionFragment;
+    "pullDuration()": FunctionFragment;
+    "pullEndAt()": FunctionFragment;
+    "pullStartAt()": FunctionFragment;
+    "pullTokenFrom()": FunctionFragment;
+    "pullTotalAmount()": FunctionFragment;
+    "registerDeposit(address,uint256)": FunctionFragment;
+    "registerWithdrawal(address,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
+    "setBarn(address)": FunctionFragment;
+    "setupPullToken(address,uint256,uint256,uint256)": FunctionFragment;
+    "token()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "userReward(address)": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "ackFunds", values?: undefined): string;
+  encodeFunctionData(functionFragment: "barn", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "lastPullTs",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "pullDuration",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "pullEndAt", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "pullStartAt",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "pullTokenFrom",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "pullTotalAmount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "registerDeposit",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "registerWithdrawal",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "setBarn", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "setupPullToken",
+    values: [string, BigNumberish, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "token", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
+  encodeFunctionData(functionFragment: "userReward", values: [string]): string;
 
+  decodeFunctionResult(functionFragment: "ackFunds", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "barn", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "lastPullTs", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pullDuration",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "pullEndAt", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pullStartAt",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "pullTokenFrom",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "pullTotalAmount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerDeposit",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerWithdrawal",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "setBarn", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setupPullToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "token", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "userReward", data: BytesLike): Result;
 
   events: {
     "OwnershipTransferred(address,address)": EventFragment;
@@ -68,6 +155,34 @@ export class Rewards extends Contract {
   interface: RewardsInterface;
 
   functions: {
+    ackFunds(overrides?: Overrides): Promise<ContractTransaction>;
+
+    "ackFunds()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+    barn(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: string;
+    }>;
+
+    "barn()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: string;
+    }>;
+
+    lastPullTs(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "lastPullTs()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
     owner(
       overrides?: CallOverrides
     ): Promise<{
@@ -80,9 +195,128 @@ export class Rewards extends Contract {
       0: string;
     }>;
 
+    pullDuration(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "pullDuration()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    pullEndAt(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "pullEndAt()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    pullStartAt(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "pullStartAt()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    pullTokenFrom(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: string;
+    }>;
+
+    "pullTokenFrom()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: string;
+    }>;
+
+    pullTotalAmount(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "pullTotalAmount()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    registerDeposit(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "registerDeposit(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    registerWithdrawal(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "registerWithdrawal(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
     renounceOwnership(overrides?: Overrides): Promise<ContractTransaction>;
 
     "renounceOwnership()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+    setBarn(_barn: string, overrides?: Overrides): Promise<ContractTransaction>;
+
+    "setBarn(address)"(
+      _barn: string,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    setupPullToken(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "setupPullToken(address,uint256,uint256,uint256)"(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    token(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: string;
+    }>;
+
+    "token()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: string;
+    }>;
 
     transferOwnership(
       newOwner: string,
@@ -93,15 +327,112 @@ export class Rewards extends Contract {
       newOwner: string,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
+
+    userReward(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "userReward(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
   };
+
+  ackFunds(overrides?: Overrides): Promise<ContractTransaction>;
+
+  "ackFunds()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+  barn(overrides?: CallOverrides): Promise<string>;
+
+  "barn()"(overrides?: CallOverrides): Promise<string>;
+
+  lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "lastPullTs()"(overrides?: CallOverrides): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
   "owner()"(overrides?: CallOverrides): Promise<string>;
 
+  pullDuration(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "pullDuration()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+  pullEndAt(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "pullEndAt()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+  pullStartAt(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "pullStartAt()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+  pullTokenFrom(overrides?: CallOverrides): Promise<string>;
+
+  "pullTokenFrom()"(overrides?: CallOverrides): Promise<string>;
+
+  pullTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "pullTotalAmount()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+  registerDeposit(
+    user: string,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "registerDeposit(address,uint256)"(
+    user: string,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  registerWithdrawal(
+    user: string,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "registerWithdrawal(address,uint256)"(
+    user: string,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
   renounceOwnership(overrides?: Overrides): Promise<ContractTransaction>;
 
   "renounceOwnership()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+  setBarn(_barn: string, overrides?: Overrides): Promise<ContractTransaction>;
+
+  "setBarn(address)"(
+    _barn: string,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  setupPullToken(
+    source: string,
+    startAt: BigNumberish,
+    endAt: BigNumberish,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "setupPullToken(address,uint256,uint256,uint256)"(
+    source: string,
+    startAt: BigNumberish,
+    endAt: BigNumberish,
+    amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  token(overrides?: CallOverrides): Promise<string>;
+
+  "token()"(overrides?: CallOverrides): Promise<string>;
 
   transferOwnership(
     newOwner: string,
@@ -113,14 +444,101 @@ export class Rewards extends Contract {
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
+  userReward(user: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  "userReward(address)"(
+    user: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   callStatic: {
+    ackFunds(overrides?: CallOverrides): Promise<void>;
+
+    "ackFunds()"(overrides?: CallOverrides): Promise<void>;
+
+    barn(overrides?: CallOverrides): Promise<string>;
+
+    "barn()"(overrides?: CallOverrides): Promise<string>;
+
+    lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "lastPullTs()"(overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<string>;
 
     "owner()"(overrides?: CallOverrides): Promise<string>;
 
+    pullDuration(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullDuration()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullEndAt(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullEndAt()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullStartAt(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullStartAt()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullTokenFrom(overrides?: CallOverrides): Promise<string>;
+
+    "pullTokenFrom()"(overrides?: CallOverrides): Promise<string>;
+
+    pullTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullTotalAmount()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    registerDeposit(
+      user: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "registerDeposit(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    registerWithdrawal(
+      user: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "registerWithdrawal(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
     "renounceOwnership()"(overrides?: CallOverrides): Promise<void>;
+
+    setBarn(_barn: string, overrides?: CallOverrides): Promise<void>;
+
+    "setBarn(address)"(_barn: string, overrides?: CallOverrides): Promise<void>;
+
+    setupPullToken(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "setupPullToken(address,uint256,uint256,uint256)"(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    token(overrides?: CallOverrides): Promise<string>;
+
+    "token()"(overrides?: CallOverrides): Promise<string>;
 
     transferOwnership(
       newOwner: string,
@@ -131,6 +549,13 @@ export class Rewards extends Contract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    userReward(user: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "userReward(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   filters: {
@@ -141,13 +566,96 @@ export class Rewards extends Contract {
   };
 
   estimateGas: {
+    ackFunds(overrides?: Overrides): Promise<BigNumber>;
+
+    "ackFunds()"(overrides?: Overrides): Promise<BigNumber>;
+
+    barn(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "barn()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "lastPullTs()"(overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     "owner()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    pullDuration(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullDuration()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullEndAt(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullEndAt()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullStartAt(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullStartAt()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullTokenFrom(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullTokenFrom()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    pullTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "pullTotalAmount()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    registerDeposit(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "registerDeposit(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    registerWithdrawal(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "registerWithdrawal(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
     renounceOwnership(overrides?: Overrides): Promise<BigNumber>;
 
     "renounceOwnership()"(overrides?: Overrides): Promise<BigNumber>;
+
+    setBarn(_barn: string, overrides?: Overrides): Promise<BigNumber>;
+
+    "setBarn(address)"(
+      _barn: string,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    setupPullToken(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "setupPullToken(address,uint256,uint256,uint256)"(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    token(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "token()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
       newOwner: string,
@@ -158,16 +666,111 @@ export class Rewards extends Contract {
       newOwner: string,
       overrides?: Overrides
     ): Promise<BigNumber>;
+
+    userReward(user: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "userReward(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    ackFunds(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    "ackFunds()"(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    barn(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "barn()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    lastPullTs(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "lastPullTs()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "owner()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    pullDuration(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "pullDuration()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    pullEndAt(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "pullEndAt()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    pullStartAt(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "pullStartAt()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    pullTokenFrom(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "pullTokenFrom()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    pullTotalAmount(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "pullTotalAmount()"(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    registerDeposit(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "registerDeposit(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    registerWithdrawal(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "registerWithdrawal(address,uint256)"(
+      user: string,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
     renounceOwnership(overrides?: Overrides): Promise<PopulatedTransaction>;
 
     "renounceOwnership()"(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    setBarn(
+      _barn: string,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "setBarn(address)"(
+      _barn: string,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    setupPullToken(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "setupPullToken(address,uint256,uint256,uint256)"(
+      source: string,
+      startAt: BigNumberish,
+      endAt: BigNumberish,
+      amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    token(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "token()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     transferOwnership(
       newOwner: string,
@@ -177,6 +780,16 @@ export class Rewards extends Contract {
     "transferOwnership(address)"(
       newOwner: string,
       overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    userReward(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "userReward(address)"(
+      user: string,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }
