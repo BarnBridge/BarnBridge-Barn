@@ -21,14 +21,23 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface Test2FacetInterface extends ethers.utils.Interface {
   functions: {
+    "c_0xfb799b00(bytes32)": FunctionFragment;
     "test1Func1()": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "c_0xfb799b00",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(
     functionFragment: "test1Func1",
     values?: undefined
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "c_0xfb799b00",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "test1Func1", data: BytesLike): Result;
 
   events: {};
@@ -48,6 +57,20 @@ export class Test2Facet extends Contract {
   interface: Test2FacetInterface;
 
   functions: {
+    c_0xfb799b00(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+
+    "c_0xfb799b00(bytes32)"(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+
     test1Func1(
       overrides?: CallOverrides
     ): Promise<{
@@ -61,11 +84,31 @@ export class Test2Facet extends Contract {
     }>;
   };
 
+  c_0xfb799b00(
+    c__0xfb799b00: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
+  "c_0xfb799b00(bytes32)"(
+    c__0xfb799b00: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
   test1Func1(overrides?: CallOverrides): Promise<BigNumber>;
 
   "test1Func1()"(overrides?: CallOverrides): Promise<BigNumber>;
 
   callStatic: {
+    c_0xfb799b00(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "c_0xfb799b00(bytes32)"(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     test1Func1(overrides?: CallOverrides): Promise<BigNumber>;
 
     "test1Func1()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -74,12 +117,32 @@ export class Test2Facet extends Contract {
   filters: {};
 
   estimateGas: {
+    c_0xfb799b00(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "c_0xfb799b00(bytes32)"(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     test1Func1(overrides?: CallOverrides): Promise<BigNumber>;
 
     "test1Func1()"(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    c_0xfb799b00(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "c_0xfb799b00(bytes32)"(
+      c__0xfb799b00: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     test1Func1(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "test1Func1()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;

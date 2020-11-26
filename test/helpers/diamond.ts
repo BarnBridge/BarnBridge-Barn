@@ -10,6 +10,8 @@ export const FacetCutAction = {
 export function getSelectors (contract:Contract) {
     const signatures: string[] = Object.keys(contract.interface.functions);
 
+    console.log(signatures);
+
     return signatures.reduce((acc: string[], val) => {
         if (val !== 'init(bytes)') {
             acc.push(contract.interface.getSighash(val));

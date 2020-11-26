@@ -10,13 +10,29 @@ import {
   BigNumberish,
   PopulatedTransaction,
 } from "ethers";
-import { Contract, ContractTransaction } from "@ethersproject/contracts";
+import {
+  Contract,
+  ContractTransaction,
+  CallOverrides,
+} from "@ethersproject/contracts";
 import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface LibDiamondInterface extends ethers.utils.Interface {
-  functions: {};
+  functions: {
+    "c_0xfcecf9b4(bytes32)": FunctionFragment;
+  };
+
+  encodeFunctionData(
+    functionFragment: "c_0xfcecf9b4",
+    values: [BytesLike]
+  ): string;
+
+  decodeFunctionResult(
+    functionFragment: "c_0xfcecf9b4",
+    data: BytesLike
+  ): Result;
 
   events: {
     "DiamondCut(tuple[],address,bytes)": EventFragment;
@@ -38,15 +54,69 @@ export class LibDiamond extends Contract {
 
   interface: LibDiamondInterface;
 
-  functions: {};
+  functions: {
+    c_0xfcecf9b4(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
 
-  callStatic: {};
+    "c_0xfcecf9b4(bytes32)"(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+  };
+
+  c_0xfcecf9b4(
+    c__0xfcecf9b4: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
+  "c_0xfcecf9b4(bytes32)"(
+    c__0xfcecf9b4: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
+  callStatic: {
+    c_0xfcecf9b4(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "c_0xfcecf9b4(bytes32)"(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+  };
 
   filters: {
     DiamondCut(_diamondCut: null, _init: null, _calldata: null): EventFilter;
   };
 
-  estimateGas: {};
+  estimateGas: {
+    c_0xfcecf9b4(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-  populateTransaction: {};
+    "c_0xfcecf9b4(bytes32)"(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+  };
+
+  populateTransaction: {
+    c_0xfcecf9b4(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "c_0xfcecf9b4(bytes32)"(
+      c__0xfcecf9b4: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+  };
 }

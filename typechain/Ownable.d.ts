@@ -20,28 +20,28 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface OwnershipFacetInterface extends ethers.utils.Interface {
+interface OwnableInterface extends ethers.utils.Interface {
   functions: {
-    "c_0xcd8bd364(bytes32)": FunctionFragment;
     "owner()": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0xcd8bd364",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
 
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "c_0xcd8bd364",
+    functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
@@ -54,7 +54,7 @@ interface OwnershipFacetInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
 
-export class OwnershipFacet extends Contract {
+export class Ownable extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -65,94 +65,70 @@ export class OwnershipFacet extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: OwnershipFacetInterface;
+  interface: OwnableInterface;
 
   functions: {
-    c_0xcd8bd364(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
-    "c_0xcd8bd364(bytes32)"(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: void;
-    }>;
-
     owner(
       overrides?: CallOverrides
     ): Promise<{
-      owner_: string;
       0: string;
     }>;
 
     "owner()"(
       overrides?: CallOverrides
     ): Promise<{
-      owner_: string;
       0: string;
     }>;
 
+    renounceOwnership(overrides?: Overrides): Promise<ContractTransaction>;
+
+    "renounceOwnership()"(overrides?: Overrides): Promise<ContractTransaction>;
+
     transferOwnership(
-      _newOwner: string,
+      newOwner: string,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
     "transferOwnership(address)"(
-      _newOwner: string,
+      newOwner: string,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
   };
-
-  c_0xcd8bd364(
-    c__0xcd8bd364: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  "c_0xcd8bd364(bytes32)"(
-    c__0xcd8bd364: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
   "owner()"(overrides?: CallOverrides): Promise<string>;
 
+  renounceOwnership(overrides?: Overrides): Promise<ContractTransaction>;
+
+  "renounceOwnership()"(overrides?: Overrides): Promise<ContractTransaction>;
+
   transferOwnership(
-    _newOwner: string,
+    newOwner: string,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
   "transferOwnership(address)"(
-    _newOwner: string,
+    newOwner: string,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    c_0xcd8bd364(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "c_0xcd8bd364(bytes32)"(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     owner(overrides?: CallOverrides): Promise<string>;
 
     "owner()"(overrides?: CallOverrides): Promise<string>;
 
+    renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
+    "renounceOwnership()"(overrides?: CallOverrides): Promise<void>;
+
     transferOwnership(
-      _newOwner: string,
+      newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
     "transferOwnership(address)"(
-      _newOwner: string,
+      newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -165,53 +141,41 @@ export class OwnershipFacet extends Contract {
   };
 
   estimateGas: {
-    c_0xcd8bd364(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "c_0xcd8bd364(bytes32)"(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     "owner()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    renounceOwnership(overrides?: Overrides): Promise<BigNumber>;
+
+    "renounceOwnership()"(overrides?: Overrides): Promise<BigNumber>;
+
     transferOwnership(
-      _newOwner: string,
+      newOwner: string,
       overrides?: Overrides
     ): Promise<BigNumber>;
 
     "transferOwnership(address)"(
-      _newOwner: string,
+      newOwner: string,
       overrides?: Overrides
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    c_0xcd8bd364(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "c_0xcd8bd364(bytes32)"(
-      c__0xcd8bd364: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "owner()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    renounceOwnership(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    "renounceOwnership()"(overrides?: Overrides): Promise<PopulatedTransaction>;
+
     transferOwnership(
-      _newOwner: string,
+      newOwner: string,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
     "transferOwnership(address)"(
-      _newOwner: string,
+      newOwner: string,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
   };

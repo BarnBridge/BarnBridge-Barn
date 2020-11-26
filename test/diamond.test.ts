@@ -144,6 +144,12 @@ describe('Diamond', function () {
                 functionSelectors: getSelectors(test2Facet),
             }];
 
+            console.log(await loupe.facets());
+            console.log(getSelectors(test2Facet));
+            console.log(test2Facet.functions);
+
+            console.log(await cut.connect(owner).diamondCut(_diamondCut, zeroAddress, '0x'));
+
             await expect(cut.connect(owner).diamondCut(_diamondCut, zeroAddress, '0x')).to.not.be.reverted;
 
             const test2 = (await diamondAsFacet(diamond, 'Test2Facet')) as Test2Facet;
