@@ -5,16 +5,26 @@ import "../interfaces/IRewards.sol";
 
 contract BarnMock {
     IRewards public r;
+    uint256 public bondStaked;
+    mapping(address => uint256) private balances;
 
     constructor(address rewards) {
         r = IRewards(rewards);
     }
 
-    function callRegisterDeposit(address user, uint256 amount) public {
-        return r.registerDeposit(user, amount);
+    function callRegisterUserAction(address user) public {
+        return r.registerUserAction(user);
     }
 
-    function callRegisterWithdrawal(address user, uint256 amount) public {
-        return r.registerWithdrawal(user, amount);
+    function setBondStaked(uint256 value) public {
+        bondStaked = value;
+    }
+
+    function setBalance(address user, uint256 balance) public {
+        balances[user] = balance;
+    }
+
+    function balanceOf(address user) public view returns (uint256) {
+        return balances[user];
     }
 }

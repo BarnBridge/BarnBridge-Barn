@@ -22,30 +22,45 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface BarnMockInterface extends ethers.utils.Interface {
   functions: {
-    "callRegisterDeposit(address,uint256)": FunctionFragment;
-    "callRegisterWithdrawal(address,uint256)": FunctionFragment;
+    "balanceOf(address)": FunctionFragment;
+    "bondStaked()": FunctionFragment;
+    "callRegisterUserAction(address)": FunctionFragment;
     "r()": FunctionFragment;
+    "setBalance(address,uint256)": FunctionFragment;
+    "setBondStaked(uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "callRegisterDeposit",
-    values: [string, BigNumberish]
+    functionFragment: "bondStaked",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "callRegisterWithdrawal",
-    values: [string, BigNumberish]
+    functionFragment: "callRegisterUserAction",
+    values: [string]
   ): string;
   encodeFunctionData(functionFragment: "r", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "setBalance",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setBondStaked",
+    values: [BigNumberish]
+  ): string;
 
+  decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "bondStaked", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "callRegisterDeposit",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "callRegisterWithdrawal",
+    functionFragment: "callRegisterUserAction",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "r", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setBalance", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setBondStaked",
+    data: BytesLike
+  ): Result;
 
   events: {};
 }
@@ -64,27 +79,39 @@ export class BarnMock extends Contract {
   interface: BarnMockInterface;
 
   functions: {
-    callRegisterDeposit(
+    balanceOf(
       user: string,
-      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "balanceOf(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    bondStaked(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "bondStaked()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    callRegisterUserAction(
+      user: string,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
-    "callRegisterDeposit(address,uint256)"(
+    "callRegisterUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    callRegisterWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    "callRegisterWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
@@ -99,29 +126,48 @@ export class BarnMock extends Contract {
     ): Promise<{
       0: string;
     }>;
+
+    setBalance(
+      user: string,
+      balance: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "setBalance(address,uint256)"(
+      user: string,
+      balance: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    setBondStaked(
+      value: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "setBondStaked(uint256)"(
+      value: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
   };
 
-  callRegisterDeposit(
+  balanceOf(user: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  "balanceOf(address)"(
     user: string,
-    amount: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  bondStaked(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "bondStaked()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+  callRegisterUserAction(
+    user: string,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
-  "callRegisterDeposit(address,uint256)"(
+  "callRegisterUserAction(address)"(
     user: string,
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  callRegisterWithdrawal(
-    user: string,
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  "callRegisterWithdrawal(address,uint256)"(
-    user: string,
-    amount: BigNumberish,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
@@ -129,95 +175,177 @@ export class BarnMock extends Contract {
 
   "r()"(overrides?: CallOverrides): Promise<string>;
 
+  setBalance(
+    user: string,
+    balance: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "setBalance(address,uint256)"(
+    user: string,
+    balance: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  setBondStaked(
+    value: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "setBondStaked(uint256)"(
+    value: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
   callStatic: {
-    callRegisterDeposit(
+    balanceOf(user: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "balanceOf(address)"(
       user: string,
-      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    bondStaked(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "bondStaked()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    callRegisterUserAction(
+      user: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    "callRegisterDeposit(address,uint256)"(
+    "callRegisterUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    callRegisterWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "callRegisterWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
     r(overrides?: CallOverrides): Promise<string>;
 
     "r()"(overrides?: CallOverrides): Promise<string>;
+
+    setBalance(
+      user: string,
+      balance: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "setBalance(address,uint256)"(
+      user: string,
+      balance: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setBondStaked(
+      value: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "setBondStaked(uint256)"(
+      value: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {};
 
   estimateGas: {
-    callRegisterDeposit(
+    balanceOf(user: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "balanceOf(address)"(
       user: string,
-      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    bondStaked(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "bondStaked()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    callRegisterUserAction(
+      user: string,
       overrides?: Overrides
     ): Promise<BigNumber>;
 
-    "callRegisterDeposit(address,uint256)"(
+    "callRegisterUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    callRegisterWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    "callRegisterWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<BigNumber>;
 
     r(overrides?: CallOverrides): Promise<BigNumber>;
 
     "r()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setBalance(
+      user: string,
+      balance: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "setBalance(address,uint256)"(
+      user: string,
+      balance: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    setBondStaked(
+      value: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "setBondStaked(uint256)"(
+      value: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    callRegisterDeposit(
+    balanceOf(
       user: string,
-      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "balanceOf(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    bondStaked(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "bondStaked()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    callRegisterUserAction(
+      user: string,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
-    "callRegisterDeposit(address,uint256)"(
+    "callRegisterUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    callRegisterWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    "callRegisterWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
     r(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "r()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setBalance(
+      user: string,
+      balance: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "setBalance(address,uint256)"(
+      user: string,
+      balance: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    setBondStaked(
+      value: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "setBondStaked(uint256)"(
+      value: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
   };
 }

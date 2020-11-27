@@ -22,25 +22,16 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface IRewardsInterface extends ethers.utils.Interface {
   functions: {
-    "registerDeposit(address,uint256)": FunctionFragment;
-    "registerWithdrawal(address,uint256)": FunctionFragment;
+    "registerUserAction(address)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "registerDeposit",
-    values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "registerWithdrawal",
-    values: [string, BigNumberish]
+    functionFragment: "registerUserAction",
+    values: [string]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "registerDeposit",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "registerWithdrawal",
+    functionFragment: "registerUserAction",
     data: BytesLike
   ): Result;
 
@@ -61,77 +52,32 @@ export class IRewards extends Contract {
   interface: IRewardsInterface;
 
   functions: {
-    registerDeposit(
+    registerUserAction(
       user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
   };
 
-  registerDeposit(
+  registerUserAction(
     user: string,
-    amount: BigNumberish,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
-  "registerDeposit(address,uint256)"(
+  "registerUserAction(address)"(
     user: string,
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  registerWithdrawal(
-    user: string,
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  "registerWithdrawal(address,uint256)"(
-    user: string,
-    amount: BigNumberish,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    registerDeposit(
-      user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    registerUserAction(user: string, overrides?: CallOverrides): Promise<void>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -139,53 +85,22 @@ export class IRewards extends Contract {
   filters: {};
 
   estimateGas: {
-    registerDeposit(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    registerUserAction(user: string, overrides?: Overrides): Promise<BigNumber>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    registerDeposit(
+    registerUserAction(
       user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
   };

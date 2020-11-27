@@ -89,17 +89,19 @@ describe('Rewards', function () {
         });
     });
 
-    describe('registerDeposit', function () {
+    describe('registerUserAction', function () {
         it('can only be called by barn', async function () {
-            await expect(rewards.connect(happyPirate).registerDeposit(flyingParrotAddress, amount))
+            await expect(rewards.connect(happyPirate).registerUserAction(flyingParrotAddress))
                 .to.be.revertedWith('only callable by barn');
 
-            await expect(barn.callRegisterDeposit(happyPirateAddress, amount)).to.not.be.reverted;
+            await barn.setBondStaked(amount);
+
+            await expect(barn.callRegisterUserAction(happyPirateAddress)).to.not.be.reverted;
         });
 
         it('does not pull bond if function is disabled', async function () {
             await rewards.connect(treasury).setupPullToken(zeroAddress, 0, 0, 0);
-            await barn.callRegisterDeposit(happyPirateAddress, amount);
+            await barn.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(0);
 
@@ -108,14 +110,63 @@ describe('Rewards', function () {
             const startAt = await helpers.getLatestBlockTimestamp();
             const endsAt = startAt + 60 * 60 * 24 * 7;
             await rewards.connect(treasury).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
+            await barn.setBondStaked(amount);
 
             await helpers.moveAtTimestamp(startAt + time.day);
-            await barn.callRegisterDeposit(happyPirateAddress, amount);
+            await barn.callRegisterUserAction(happyPirateAddress);
 
             // total time is 7 days & total amount is 100  => 1 day worth of rewards ~14.28
             const balance = await bond.balanceOf(rewards.address);
             expect(balance.gt(BigNumber.from(14).mul(helpers.tenPow18))).to.be.true;
             expect(balance.lt(BigNumber.from(15).mul(helpers.tenPow18))).to.be.true;
+        });
+
+        it('transfers reward to user when called', async function () {
+            await bond.connect(communityVault).approve(rewards.address, amount);
+            // todo
+        });
+    });
+
+    describe('ackFunds', function () {
+        it('calculates the new multiplier when funds are added', async function () {
+            expect(await rewards.currentMultiplier()).to.equal(0);
+
+            await bond.mint(rewards.address, amount);
+            await barn.setBalance(happyPirateAddress, amount);
+            await barn.setBondStaked(amount);
+
+            await expect(rewards.ackFunds()).to.not.be.reverted;
+
+            expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
+            expect(await rewards.balanceBefore()).to.equal(amount);
+
+            await bond.mint(rewards.address, amount);
+
+            await expect(rewards.ackFunds()).to.not.be.reverted;
+            expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18.mul(2));
+            expect(await rewards.balanceBefore()).to.equal(amount.mul(2));
+        });
+
+        it('does not change multiplier on funds balance decrease but changes balance', async function () {
+            await bond.mint(rewards.address, amount);
+            await barn.setBalance(happyPirateAddress, amount);
+            await barn.setBondStaked(amount);
+
+            await expect(rewards.ackFunds()).to.not.be.reverted;
+            expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
+            expect(await rewards.balanceBefore()).to.equal(amount);
+
+            await bond.burnFrom(rewards.address, amount.div(2));
+
+            await expect(rewards.ackFunds()).to.not.be.reverted;
+            expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
+            expect(await rewards.balanceBefore()).to.equal(amount.div(2));
+
+            await bond.mint(rewards.address, amount.div(2));
+            await rewards.ackFunds();
+
+            // 1 + 50 / 100 = 1.5
+            expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18.add(helpers.tenPow18.div(2)));
         });
     });
 

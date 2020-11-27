@@ -16,7 +16,12 @@ contract Rewards is Ownable {
     uint256 public pullDuration; // == pullEndAt - pullStartAt
     uint256 public pullTotalAmount;
     uint256 public lastPullTs;
-    uint256 constant pullDecimals = 10 ** 18;
+    uint256 constant decimals = 10 ** 18;
+
+    uint256 public balanceBefore;
+    uint256 public currentMultiplier;
+
+    mapping(address => uint256) public userMultiplier;
 
     IBarn public barn;
     IERC20 public token;
@@ -28,28 +33,37 @@ contract Rewards is Ownable {
         barn = IBarn(_barn);
     }
 
-    function registerDeposit(address user, uint256 amount) public {
+    // on deposit, this function must be called before the balance is updated
+    function registerUserAction(address user) public {
         require(msg.sender == address(barn), 'only callable by barn');
-        _pullBond();
-        // pull bond
-        // ackFunds
-        // calculate user reward and transfer it
-        // set new enterMultiplier for user = currentMultiplier
+
+        _distribute(user);
     }
 
-    function registerWithdrawal(address user, uint256 amount) public {
-        require(msg.sender == address(barn), 'only callable by barn');
-
-        // 1. pull bond
-        // 2. ackFunds
-        // calculate user reward and transfer it
-        // set new enterMultiplier for user = currentMultiplier
+    function claim() public {
+        _distribute(msg.sender);
     }
 
     function ackFunds() public {
-        // 1. check diff between funds before and funds now
-        // 2. recalculate the multiplier
-        // newMultiplier = oldMultiplier + amount / total_locked_bond
+        uint256 balanceNow = token.balanceOf(address(this));
+
+        if (balanceNow == 0 || balanceNow <= balanceBefore) {
+            balanceBefore = balanceNow;
+            return;
+        }
+
+        uint256 totalStakedBond = barn.bondStaked();
+        // if there's no bond staked, it doesn't make sense to ackFunds because there's nobody to distribute them to
+        // and the calculation would fail anyways due to division by 0
+        if (totalStakedBond == 0) {
+            return;
+        }
+
+        uint256 diff = balanceNow.sub(balanceBefore);
+        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(totalStakedBond));
+
+        balanceBefore = balanceNow;
+        currentMultiplier = multiplier;
     }
 
     // setupPullToken is used to setup the rewards system; only callable by contract owner
@@ -60,7 +74,7 @@ contract Rewards is Ownable {
         pullTokenFrom = source;
         pullStartAt = startAt;
         pullEndAt = endAt;
-        pullDuration = endAt - startAt;
+        pullDuration = endAt.sub(startAt);
         pullTotalAmount = amount;
         lastPullTs = startAt;
     }
@@ -72,10 +86,10 @@ contract Rewards is Ownable {
         barn = IBarn(_barn);
     }
 
-    function userReward(address user) public view returns (uint256) {
-        // calculate user's reward
-        // reward = barn.balanceOf(user) * (currentMultiplier - enterMultiplier[user])
-        return 0;
+    function userClaimableReward(address user) public view returns (uint256) {
+        uint256 multiplier = currentMultiplier.sub(userMultiplier[user]);
+
+        return barn.balanceOf(user).mul(multiplier).div(decimals);
     }
 
     function _pullBond() internal {
@@ -87,10 +101,24 @@ contract Rewards is Ownable {
             return;
         }
 
-        uint256 timeSinceLastPull = block.timestamp - lastPullTs;
-        uint256 shareToPull = timeSinceLastPull * pullDecimals / pullDuration;
-        uint256 amountToPull = pullTotalAmount * shareToPull / pullDecimals;
+        uint256 timeSinceLastPull = block.timestamp.sub(lastPullTs);
+        uint256 shareToPull = timeSinceLastPull.mul(decimals).div(pullDuration);
+        uint256 amountToPull = pullTotalAmount.mul(shareToPull).div(decimals);
 
         token.transferFrom(pullTokenFrom, address(this), amountToPull);
+        lastPullTs = block.timestamp;
+    }
+
+    function _distribute(address user) internal {
+        _pullBond();
+        ackFunds();
+
+        uint256 reward = userClaimableReward(user);
+        if (reward > 0) {
+            token.transfer(user, reward);
+            ackFunds();
+        }
+
+        userMultiplier[user] = currentMultiplier;
     }
 }

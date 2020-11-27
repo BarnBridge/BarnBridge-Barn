@@ -23,7 +23,10 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 interface RewardsInterface extends ethers.utils.Interface {
   functions: {
     "ackFunds()": FunctionFragment;
+    "balanceBefore()": FunctionFragment;
     "barn()": FunctionFragment;
+    "claim()": FunctionFragment;
+    "currentMultiplier()": FunctionFragment;
     "lastPullTs()": FunctionFragment;
     "owner()": FunctionFragment;
     "pullDuration()": FunctionFragment;
@@ -31,18 +34,27 @@ interface RewardsInterface extends ethers.utils.Interface {
     "pullStartAt()": FunctionFragment;
     "pullTokenFrom()": FunctionFragment;
     "pullTotalAmount()": FunctionFragment;
-    "registerDeposit(address,uint256)": FunctionFragment;
-    "registerWithdrawal(address,uint256)": FunctionFragment;
+    "registerUserAction(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "setBarn(address)": FunctionFragment;
     "setupPullToken(address,uint256,uint256,uint256)": FunctionFragment;
     "token()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
-    "userReward(address)": FunctionFragment;
+    "userClaimableReward(address)": FunctionFragment;
+    "userMultiplier(address)": FunctionFragment;
   };
 
   encodeFunctionData(functionFragment: "ackFunds", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "balanceBefore",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "barn", values?: undefined): string;
+  encodeFunctionData(functionFragment: "claim", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "currentMultiplier",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "lastPullTs",
     values?: undefined
@@ -66,12 +78,8 @@ interface RewardsInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "registerDeposit",
-    values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "registerWithdrawal",
-    values: [string, BigNumberish]
+    functionFragment: "registerUserAction",
+    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -87,10 +95,26 @@ interface RewardsInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: "userReward", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "userClaimableReward",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "userMultiplier",
+    values: [string]
+  ): string;
 
   decodeFunctionResult(functionFragment: "ackFunds", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "balanceBefore",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "barn", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "currentMultiplier",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "lastPullTs", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
@@ -111,11 +135,7 @@ interface RewardsInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "registerDeposit",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "registerWithdrawal",
+    functionFragment: "registerUserAction",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -132,7 +152,14 @@ interface RewardsInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "userReward", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "userClaimableReward",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "userMultiplier",
+    data: BytesLike
+  ): Result;
 
   events: {
     "OwnershipTransferred(address,address)": EventFragment;
@@ -159,6 +186,18 @@ export class Rewards extends Contract {
 
     "ackFunds()"(overrides?: Overrides): Promise<ContractTransaction>;
 
+    balanceBefore(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "balanceBefore()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
     barn(
       overrides?: CallOverrides
     ): Promise<{
@@ -169,6 +208,22 @@ export class Rewards extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       0: string;
+    }>;
+
+    claim(overrides?: Overrides): Promise<ContractTransaction>;
+
+    "claim()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+    currentMultiplier(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "currentMultiplier()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
     }>;
 
     lastPullTs(
@@ -255,27 +310,13 @@ export class Rewards extends Contract {
       0: BigNumber;
     }>;
 
-    registerDeposit(
+    registerUserAction(
       user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
@@ -328,15 +369,29 @@ export class Rewards extends Contract {
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
-    userReward(
+    userClaimableReward(
       user: string,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
     }>;
 
-    "userReward(address)"(
+    "userClaimableReward(address)"(
       user: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    userMultiplier(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "userMultiplier(address)"(
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
@@ -347,9 +402,21 @@ export class Rewards extends Contract {
 
   "ackFunds()"(overrides?: Overrides): Promise<ContractTransaction>;
 
+  balanceBefore(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "balanceBefore()"(overrides?: CallOverrides): Promise<BigNumber>;
+
   barn(overrides?: CallOverrides): Promise<string>;
 
   "barn()"(overrides?: CallOverrides): Promise<string>;
+
+  claim(overrides?: Overrides): Promise<ContractTransaction>;
+
+  "claim()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+  currentMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
+
+  "currentMultiplier()"(overrides?: CallOverrides): Promise<BigNumber>;
 
   lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -379,27 +446,13 @@ export class Rewards extends Contract {
 
   "pullTotalAmount()"(overrides?: CallOverrides): Promise<BigNumber>;
 
-  registerDeposit(
+  registerUserAction(
     user: string,
-    amount: BigNumberish,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
-  "registerDeposit(address,uint256)"(
+  "registerUserAction(address)"(
     user: string,
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  registerWithdrawal(
-    user: string,
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  "registerWithdrawal(address,uint256)"(
-    user: string,
-    amount: BigNumberish,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
@@ -444,10 +497,20 @@ export class Rewards extends Contract {
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
-  userReward(user: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-  "userReward(address)"(
+  userClaimableReward(
     user: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  "userClaimableReward(address)"(
+    user: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  userMultiplier(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  "userMultiplier(address)"(
+    arg0: string,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -456,9 +519,21 @@ export class Rewards extends Contract {
 
     "ackFunds()"(overrides?: CallOverrides): Promise<void>;
 
+    balanceBefore(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "balanceBefore()"(overrides?: CallOverrides): Promise<BigNumber>;
+
     barn(overrides?: CallOverrides): Promise<string>;
 
     "barn()"(overrides?: CallOverrides): Promise<string>;
+
+    claim(overrides?: CallOverrides): Promise<void>;
+
+    "claim()"(overrides?: CallOverrides): Promise<void>;
+
+    currentMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "currentMultiplier()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -488,27 +563,10 @@ export class Rewards extends Contract {
 
     "pullTotalAmount()"(overrides?: CallOverrides): Promise<BigNumber>;
 
-    registerDeposit(
-      user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    registerUserAction(user: string, overrides?: CallOverrides): Promise<void>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -550,10 +608,20 @@ export class Rewards extends Contract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    userReward(user: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    "userReward(address)"(
+    userClaimableReward(
       user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "userClaimableReward(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    userMultiplier(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "userMultiplier(address)"(
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -570,9 +638,21 @@ export class Rewards extends Contract {
 
     "ackFunds()"(overrides?: Overrides): Promise<BigNumber>;
 
+    balanceBefore(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "balanceBefore()"(overrides?: CallOverrides): Promise<BigNumber>;
+
     barn(overrides?: CallOverrides): Promise<BigNumber>;
 
     "barn()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    claim(overrides?: Overrides): Promise<BigNumber>;
+
+    "claim()"(overrides?: Overrides): Promise<BigNumber>;
+
+    currentMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "currentMultiplier()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -602,27 +682,10 @@ export class Rewards extends Contract {
 
     "pullTotalAmount()"(overrides?: CallOverrides): Promise<BigNumber>;
 
-    registerDeposit(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
+    registerUserAction(user: string, overrides?: Overrides): Promise<BigNumber>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<BigNumber>;
 
@@ -667,10 +730,20 @@ export class Rewards extends Contract {
       overrides?: Overrides
     ): Promise<BigNumber>;
 
-    userReward(user: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    "userReward(address)"(
+    userClaimableReward(
       user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "userClaimableReward(address)"(
+      user: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    userMultiplier(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "userMultiplier(address)"(
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -680,9 +753,23 @@ export class Rewards extends Contract {
 
     "ackFunds()"(overrides?: Overrides): Promise<PopulatedTransaction>;
 
+    balanceBefore(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "balanceBefore()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     barn(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "barn()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    claim(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    "claim()"(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    currentMultiplier(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "currentMultiplier()"(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     lastPullTs(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -714,27 +801,13 @@ export class Rewards extends Contract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    registerDeposit(
+    registerUserAction(
       user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
-    "registerDeposit(address,uint256)"(
+    "registerUserAction(address)"(
       user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    registerWithdrawal(
-      user: string,
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    "registerWithdrawal(address,uint256)"(
-      user: string,
-      amount: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
@@ -782,13 +855,23 @@ export class Rewards extends Contract {
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
-    userReward(
+    userClaimableReward(
       user: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    "userReward(address)"(
+    "userClaimableReward(address)"(
       user: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    userMultiplier(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "userMultiplier(address)"(
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
