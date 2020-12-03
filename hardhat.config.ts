@@ -4,9 +4,9 @@ import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
 import 'hardhat-abi-exporter';
 import 'hardhat-typechain';
+import 'solidity-coverage';
 
 // no support yet for the following
-// require('solidity-coverage')
 // require('buidler-gas-reporter')
 
 // This is a sample Buidler task. To learn how to create your own go to
