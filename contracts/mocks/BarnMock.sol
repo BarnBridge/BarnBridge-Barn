@@ -16,12 +16,20 @@ contract BarnMock {
         return r.registerUserAction(user);
     }
 
-    function setBondStaked(uint256 value) public {
-        bondStaked = value;
+    function deposit(address user, uint256 amount) public {
+        callRegisterUserAction(user);
+
+        balances[user] = balances[user] + amount;
+        bondStaked = bondStaked + amount;
     }
 
-    function setBalance(address user, uint256 balance) public {
-        balances[user] = balance;
+    function withdraw(address user, uint256 amount) public {
+        require(balances[user] >= amount, "insufficient balance");
+
+        callRegisterUserAction(user);
+
+        balances[user] = balances[user] - amount;
+        bondStaked = bondStaked - amount;
     }
 
     function balanceOf(address user) public view returns (uint256) {

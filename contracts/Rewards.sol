@@ -36,13 +36,16 @@ contract Rewards is Ownable {
         barn = IBarn(_barn);
     }
 
-    // on deposit, this function must be called before the balance is updated
+    // registerUserAction is called by the Barn every time the user does a deposit or withdrawal in order to
+    // account for the changes in reward that the user should get
+    // it updates the amount owed to the user without transferring the funds
     function registerUserAction(address user) public {
         require(msg.sender == address(barn), 'only callable by barn');
 
         _calculateOwed(user);
     }
 
+    // claim calculates the currently owed reward and transfers the funds to the user
     function claim() public {
         _calculateOwed(msg.sender);
 
@@ -56,6 +59,9 @@ contract Rewards is Ownable {
         emit Claim(msg.sender, amount);
     }
 
+    // ackFunds checks the difference between the last known balance of `token` and the current one
+    // if it goes up, the multiplier is re-calculated
+    // if it goes down, it only updates the known balance
     function ackFunds() public {
         uint256 balanceNow = token.balanceOf(address(this));
 
@@ -98,22 +104,32 @@ contract Rewards is Ownable {
         barn = IBarn(_barn);
     }
 
+    // userClaimableReward returns the total amount of `token` that the user can claim at the
     function userClaimableReward(address user) public view returns (uint256) {
-        uint256 multiplier = currentMultiplier.sub(userMultiplier[user]);
-
-        return barn.balanceOf(user).mul(multiplier).div(decimals);
+        return owed[user].add(_userPendingReward(user));
     }
 
-    function _pullBond() internal {
+    // _pullToken calculates the amount based on the time passed since the last pull relative
+    // to the total amount of time that the pull functionality is active and executes a transferFrom from the
+    // address supplied as `pullTokenFrom`, if enabled
+    function _pullToken() internal {
         if (
             pullTokenFrom == address(0) ||
-            block.timestamp < pullStartAt ||
-            pullEndAt <= block.timestamp
+            block.timestamp < pullStartAt
         ) {
             return;
         }
 
-        uint256 timeSinceLastPull = block.timestamp.sub(lastPullTs);
+        uint256 timestampCap = pullEndAt;
+        if (block.timestamp < pullEndAt) {
+            timestampCap = block.timestamp;
+        }
+
+        if (lastPullTs >= timestampCap) {
+            return;
+        }
+
+        uint256 timeSinceLastPull = timestampCap.sub(lastPullTs);
         uint256 shareToPull = timeSinceLastPull.mul(decimals).div(pullDuration);
         uint256 amountToPull = pullTotalAmount.mul(shareToPull).div(decimals);
 
@@ -121,13 +137,24 @@ contract Rewards is Ownable {
         lastPullTs = block.timestamp;
     }
 
+    // _calculateOwed calculates and updates the total amount that is owed to an user and updates the user's multiplier
+    // to the current value
+    // it automatically attempts to pull the token from the source and acknowledge the funds
     function _calculateOwed(address user) internal {
-        _pullBond();
+        _pullToken();
         ackFunds();
 
-        uint256 reward = userClaimableReward(user);
+        uint256 reward = _userPendingReward(user);
 
         owed[user] = owed[user].add(reward);
         userMultiplier[user] = currentMultiplier;
+    }
+
+    // _userPendingReward calculates the reward that should be based on the current multiplier / anything that's not included in the `owed[user]` value
+    // it does not represent the entire reward that's due to the user unless added on top of `owed[user]`
+    function _userPendingReward(address user) internal view returns (uint256) {
+        uint256 multiplier = currentMultiplier.sub(userMultiplier[user]);
+
+        return barn.balanceOf(user).mul(multiplier).div(decimals);
     }
 }

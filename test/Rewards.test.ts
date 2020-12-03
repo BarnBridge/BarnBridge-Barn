@@ -19,9 +19,10 @@ describe('Rewards', function () {
     let flyingParrot: Signer, flyingParrotAddress: string;
     let communityVault: Signer, treasury: Signer;
 
-    let defaultStartAt: number;
+    let defaultStartAt: number, totalDuration: number, totalAmount: BigNumber;
 
     let snapshotId: any;
+    let snapshotTs: number;
 
     before(async function () {
         bond = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
@@ -36,25 +37,17 @@ describe('Rewards', function () {
 
         barn = (await deploy.deployContract('BarnMock', [rewards.address])) as BarnMock;
         await rewards.connect(treasury).setBarn(barn.address);
-
-        await bond.connect(communityVault).approve(rewards.address, amount.mul(100));
-
-        defaultStartAt = await helpers.getLatestBlockTimestamp();
-        const endsAt = defaultStartAt + 60 * 60 * 24 * 7;
-        await rewards.connect(treasury)
-            .setupPullToken(await communityVault.getAddress(), defaultStartAt, endsAt, amount);
     });
 
     beforeEach(async function () {
         snapshotId = await ethers.provider.send('evm_snapshot', []);
+        snapshotTs = await helpers.getLatestBlockTimestamp();
     });
 
     afterEach(async function () {
-        const ts = await helpers.getLatestBlockTimestamp();
-
         await ethers.provider.send('evm_revert', [snapshotId]);
 
-        await helpers.moveAtTimestamp(ts + 5);
+        await helpers.moveAtTimestamp(snapshotTs+5);
     });
 
     describe('General', function () {
@@ -97,8 +90,7 @@ describe('Rewards', function () {
             expect(await rewards.currentMultiplier()).to.equal(0);
 
             await bond.mint(rewards.address, amount);
-            await barn.setBalance(happyPirateAddress, amount);
-            await barn.setBondStaked(amount);
+            await barn.deposit(happyPirateAddress, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
 
@@ -114,8 +106,7 @@ describe('Rewards', function () {
 
         it('does not change multiplier on funds balance decrease but changes balance', async function () {
             await bond.mint(rewards.address, amount);
-            await barn.setBalance(happyPirateAddress, amount);
-            await barn.setBondStaked(amount);
+            await barn.deposit(happyPirateAddress, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
@@ -140,7 +131,7 @@ describe('Rewards', function () {
             await expect(rewards.connect(happyPirate).registerUserAction(flyingParrotAddress))
                 .to.be.revertedWith('only callable by barn');
 
-            await barn.setBondStaked(amount);
+            await barn.deposit(happyPirateAddress, amount);
 
             await expect(barn.callRegisterUserAction(happyPirateAddress)).to.not.be.reverted;
         });
@@ -156,7 +147,7 @@ describe('Rewards', function () {
             const startAt = await helpers.getLatestBlockTimestamp();
             const endsAt = startAt + 60 * 60 * 24 * 7;
             await rewards.connect(treasury).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
-            await barn.setBondStaked(amount);
+            await barn.deposit(happyPirateAddress, amount);
 
             await helpers.moveAtTimestamp(startAt + time.day);
             await barn.callRegisterUserAction(happyPirateAddress);
@@ -170,11 +161,9 @@ describe('Rewards', function () {
         it('updates the amount owed to user but does not send funds', async function () {
             await bond.connect(communityVault).approve(rewards.address, amount);
 
-            await barn.setBondStaked(amount);
-            await barn.setBalance(happyPirateAddress, amount);
+            await barn.deposit(happyPirateAddress, amount);
 
             await helpers.moveAtTimestamp(defaultStartAt + time.day);
-            await barn.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(happyPirateAddress)).to.equal(0);
 
@@ -190,35 +179,72 @@ describe('Rewards', function () {
         });
 
         it('transfers the amount to user', async function () {
-            await bond.connect(communityVault).approve(rewards.address, amount);
+            const { start, end } = await setupRewards();
 
-            await barn.setBondStaked(amount);
-            await barn.setBalance(happyPirateAddress, amount);
+            await barn.deposit(happyPirateAddress, amount);
+            const depositTs = await helpers.getLatestBlockTimestamp();
 
-            await helpers.moveAtTimestamp(defaultStartAt + time.day);
-            await barn.callRegisterUserAction(happyPirateAddress);
+            const expectedBalance1 = calcTotalReward(start, depositTs, end-start, amount);
 
-            const registerTs = await helpers.getLatestBlockTimestamp();
-
-            const balance = await bond.balanceOf(rewards.address);
+            await helpers.moveAtTimestamp(start + time.day);
 
             await expect(rewards.connect(happyPirate).claim()).to.not.be.reverted;
-
-            // between the moments when the `registerUserAction` was called and when `claim` was called
-            // the user accumulated some more rewards which we have to account for
-            // we do that by calculating how much time elapsed between the actions
-            // and the rewards accrued during this time
             const claimTs = await helpers.getLatestBlockTimestamp();
-            const diff = claimTs - registerTs;
-            const shareToPull = BigNumber.from(diff).mul(helpers.tenPow18).div(await rewards.pullDuration());
-            const amountToPull = shareToPull.mul(await rewards.pullTotalAmount()).div(helpers.tenPow18);
+
+            const expectedBalance2 = calcTotalReward(depositTs, claimTs, end-start, amount);
 
             expect(await bond.transferCalled()).to.be.true;
-            expect(await bond.balanceOf(happyPirateAddress)).to.be.equal(balance.add(amountToPull));
+            expect(await bond.balanceOf(happyPirateAddress)).to.be.equal(expectedBalance1.add(expectedBalance2));
+            expect(await rewards.owed(happyPirateAddress)).to.be.equal(0);
         });
 
-        it('works with multiple users with different shares');
+        it('works with multiple users', async function () {
+            const { start, end } = await setupRewards();
+
+            await barn.deposit(happyPirateAddress, amount);
+            const deposit1Ts = await helpers.getLatestBlockTimestamp();
+            const expectedBalance1 = calcTotalReward(start, deposit1Ts, end-start, amount);
+
+            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
+
+            await barn.deposit(flyingParrotAddress, amount);
+            const deposit2Ts = await helpers.getLatestBlockTimestamp();
+            const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end-start, amount);
+
+            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
+
+            await barn.deposit(userAddress, amount);
+            const deposit3Ts = await helpers.getLatestBlockTimestamp();
+            const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end-start, amount);
+
+            expect(await bond.balanceOf(rewards.address))
+                .to.equal(expectedBalance1.add(expectedBalance2).add(expectedBalance3));
+
+            await helpers.moveAtTimestamp(start + 10*time.day);
+
+            await rewards.connect(happyPirate).claim();
+            const multiplier = await rewards.currentMultiplier();
+            const expectedReward = multiplier.mul(amount).div(helpers.tenPow18);
+
+            expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward);
+        });
     });
+
+    async function setupRewards () : Promise<{start:number, end:number}> {
+        const startAt = await helpers.getLatestBlockTimestamp();
+        const endsAt = startAt + 60 * 60 * 24 * 7;
+        await rewards.connect(treasury).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
+        await bond.connect(communityVault).approve(rewards.address, amount);
+
+        return { start: startAt, end: endsAt };
+    }
+
+    function calcTotalReward (startTs:number, endTs:number, totalDuration: number, totalAmount: BigNumber):BigNumber {
+        const diff = endTs - startTs;
+        const shareToPull = BigNumber.from(diff).mul(helpers.tenPow18).div(totalDuration);
+
+        return shareToPull.mul(totalAmount).div(helpers.tenPow18);
+    }
 
     async function setupContracts () {
         const cvValue = BigNumber.from(2800000).mul(helpers.tenPow18);
