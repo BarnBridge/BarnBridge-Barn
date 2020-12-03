@@ -22,9 +22,12 @@ contract Rewards is Ownable {
     uint256 public currentMultiplier;
 
     mapping(address => uint256) public userMultiplier;
+    mapping(address => uint256) public owed;
 
     IBarn public barn;
     IERC20 public token;
+
+    event Claim(address indexed user, uint256 amount);
 
     constructor(address _owner, address _token, address _barn) {
         transferOwnership(_owner);
@@ -37,11 +40,20 @@ contract Rewards is Ownable {
     function registerUserAction(address user) public {
         require(msg.sender == address(barn), 'only callable by barn');
 
-        _distribute(user);
+        _calculateOwed(user);
     }
 
     function claim() public {
-        _distribute(msg.sender);
+        _calculateOwed(msg.sender);
+
+        uint256 amount = owed[msg.sender];
+        require(amount > 0, "nothing to claim");
+
+        owed[msg.sender] = 0;
+
+        token.transfer(msg.sender, amount);
+
+        emit Claim(msg.sender, amount);
     }
 
     function ackFunds() public {
@@ -109,16 +121,13 @@ contract Rewards is Ownable {
         lastPullTs = block.timestamp;
     }
 
-    function _distribute(address user) internal {
+    function _calculateOwed(address user) internal {
         _pullBond();
         ackFunds();
 
         uint256 reward = userClaimableReward(user);
-        if (reward > 0) {
-            token.transfer(user, reward);
-            ackFunds();
-        }
 
+        owed[user] = owed[user].add(reward);
         userMultiplier[user] = currentMultiplier;
     }
 }

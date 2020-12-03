@@ -28,6 +28,7 @@ interface RewardsInterface extends ethers.utils.Interface {
     "claim()": FunctionFragment;
     "currentMultiplier()": FunctionFragment;
     "lastPullTs()": FunctionFragment;
+    "owed(address)": FunctionFragment;
     "owner()": FunctionFragment;
     "pullDuration()": FunctionFragment;
     "pullEndAt()": FunctionFragment;
@@ -59,6 +60,7 @@ interface RewardsInterface extends ethers.utils.Interface {
     functionFragment: "lastPullTs",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "owed", values: [string]): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "pullDuration",
@@ -116,6 +118,7 @@ interface RewardsInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "lastPullTs", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owed", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "pullDuration",
@@ -162,9 +165,11 @@ interface RewardsInterface extends ethers.utils.Interface {
   ): Result;
 
   events: {
+    "Claim(address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
   };
 
+  getEvent(nameOrSignatureOrTopic: "Claim"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
 
@@ -233,6 +238,20 @@ export class Rewards extends Contract {
     }>;
 
     "lastPullTs()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    owed(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "owed(address)"(
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
@@ -422,6 +441,10 @@ export class Rewards extends Contract {
 
   "lastPullTs()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+  owed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  "owed(address)"(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
   owner(overrides?: CallOverrides): Promise<string>;
 
   "owner()"(overrides?: CallOverrides): Promise<string>;
@@ -539,6 +562,13 @@ export class Rewards extends Contract {
 
     "lastPullTs()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    owed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "owed(address)"(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<string>;
 
     "owner()"(overrides?: CallOverrides): Promise<string>;
@@ -627,6 +657,8 @@ export class Rewards extends Contract {
   };
 
   filters: {
+    Claim(user: string | null, amount: null): EventFilter;
+
     OwnershipTransferred(
       previousOwner: string | null,
       newOwner: string | null
@@ -657,6 +689,13 @@ export class Rewards extends Contract {
     lastPullTs(overrides?: CallOverrides): Promise<BigNumber>;
 
     "lastPullTs()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    owed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    "owed(address)"(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -774,6 +813,16 @@ export class Rewards extends Contract {
     lastPullTs(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "lastPullTs()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    owed(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "owed(address)"(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
