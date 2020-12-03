@@ -6,6 +6,7 @@
   "scripts": {
     "compile": "hardhat clean && hardhat compile",
     "test": "hardhat test",
+    "compile-and-test": "yarn run compile && hardhat test",
     "coverage": "hardhat coverage --temp artifacts",
     "lint": "yarn run lint:ts && npm run lint:sol",
     "lint:fix": "yarn run lint:ts:fix",
