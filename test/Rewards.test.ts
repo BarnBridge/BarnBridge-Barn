@@ -158,6 +158,21 @@ describe('Rewards', function () {
             expect(balance.lt(BigNumber.from(15).mul(helpers.tenPow18))).to.be.true;
         });
 
+        it('does not pull bond if already pulled everything', async function () {
+            const { start, end } = await setupRewards();
+
+            await helpers.moveAtTimestamp(end + 1 * time.day);
+
+            await barn.callRegisterUserAction(happyPirateAddress);
+
+            expect(await bond.balanceOf(rewards.address)).to.equal(amount);
+
+            await helpers.moveAtTimestamp(end + 1*time.day);
+            await barn.callRegisterUserAction(happyPirateAddress);
+
+            expect(await bond.balanceOf(rewards.address)).to.equal(amount);
+        });
+
         it('updates the amount owed to user but does not send funds', async function () {
             await bond.connect(communityVault).approve(rewards.address, amount);
 

@@ -104,11 +104,6 @@ contract Rewards is Ownable {
         barn = IBarn(_barn);
     }
 
-    // userClaimableReward returns the total amount of `token` that the user can claim at the
-    function userClaimableReward(address user) public view returns (uint256) {
-        return owed[user].add(_userPendingReward(user));
-    }
-
     // _pullToken calculates the amount based on the time passed since the last pull relative
     // to the total amount of time that the pull functionality is active and executes a transferFrom from the
     // address supplied as `pullTokenFrom`, if enabled
