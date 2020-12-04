@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
 import { expect } from 'chai';
-import { BarnFacet, Erc20Mock } from '../typechain';
+import { BarnFacet, Erc20Mock, RewardsMock } from '../typechain';
 import * as time from './helpers/time';
 import * as deploy from './helpers/deploy';
 import { diamondAsFacet } from './helpers/diamond';
@@ -10,7 +10,7 @@ import { diamondAsFacet } from './helpers/diamond';
 describe('Barn', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let barn: BarnFacet, bond: Erc20Mock;
+    let barn: BarnFacet, bond: Erc20Mock, rewardsMock: RewardsMock;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -33,8 +33,10 @@ describe('Barn', function () {
             userAddress,
         );
 
+        rewardsMock = (await deploy.deployContract('RewardsMock')) as RewardsMock;
+
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
-        await barn.initBarn(bond.address, await communityVault.getAddress(), await treasury.getAddress());
+        await barn.initBarn(bond.address, await communityVault.getAddress(), await treasury.getAddress(), rewardsMock.address);
     });
 
     beforeEach(async function () {
@@ -62,6 +64,13 @@ describe('Barn', function () {
 
         it('reverts if user did not approve token', async function () {
             await expect(barn.connect(user).deposit(amount)).to.be.revertedWith('Token allowance too small');
+        });
+
+        it('calls registerUserAction on rewards contract', async function () {
+            await prepareAccount(user, amount);
+            await barn.connect(user).deposit(amount);
+
+            expect(await rewardsMock.calledWithUser()).to.equal(userAddress);
         });
 
         it('stores the user balance in storage', async function () {
@@ -201,6 +210,13 @@ describe('Barn', function () {
 
         it('reverts if user does not have enough balance', async function () {
             await expect(barn.connect(user).withdraw(amount)).to.be.revertedWith('Insufficient balance');
+        });
+
+        it('calls registerUserAction on rewards contract', async function () {
+            await prepareAccount(user, amount);
+            await barn.connect(user).deposit(amount);
+
+            expect(await rewardsMock.calledWithUser()).to.equal(userAddress);
         });
 
         it('sets user balance to 0', async function () {
