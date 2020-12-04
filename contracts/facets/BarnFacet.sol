@@ -54,6 +54,8 @@ contract BarnFacet is IBarn {
         uint256 allowance = ds.bond.allowance(msg.sender, address(this));
         require(allowance >= amount, "Token allowance too small");
 
+        // this must be called before the user's balance is updated so the rewards contract can calculate
+        // the amount owed correctly
         ds.rewards.registerUserAction(msg.sender);
 
         _updateUserBalance(ds.userStakeHistory[msg.sender], balanceOf(msg.sender).add(amount));
@@ -82,6 +84,8 @@ contract BarnFacet is IBarn {
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
 
+        // this must be called before the user's balance is updated so the rewards contract can calculate
+        // the amount owed correctly
         ds.rewards.registerUserAction(msg.sender);
 
         _updateUserBalance(ds.userStakeHistory[msg.sender], balance.sub(amount));
