@@ -28,7 +28,7 @@ const cfg: HardhatUserConfig = {
     etherscan: config.etherscan,
 
     abiExporter: {
-        only: ['Barn', 'BarnFacet', 'OwnershipFacet', 'DiamondCutFacet', 'DiamondLoupeFacet'],
+        only: ['Barn', 'BarnFacet', 'BondFacet', 'OwnershipFacet', 'DiamondCutFacet', 'DiamondLoupeFacet'],
         clear: true,
     },
 };
