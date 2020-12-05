@@ -3,7 +3,7 @@ node_modules
 # Buidler files
 cache
 artifacts
-abi
+
 # Coverage
 coverage
 coverage.json
