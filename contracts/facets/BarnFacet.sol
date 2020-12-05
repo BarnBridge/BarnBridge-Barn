@@ -9,18 +9,10 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BarnFacet is IBarn {
+contract BarnFacet {
     using SafeMath for uint256;
 
-    uint256 constant TOTAL_VESTING_BOND = 2_200_000e18;
-    uint256 constant VESTING_BOND_PER_EPOCH = 22_000e18;
-    uint256 constant VESTING_PERIOD = 100;
-    uint256 constant VESTING_START = 1603065600;
-    uint256 constant VESTING_EPOCH_DURATION = 604800;
-    uint256 constant TOTAL_BOND = 10_000_000e18;
-
     uint256 constant public MAX_LOCK = 365 days;
-
     uint256 constant BASE_MULTIPLIER = 1e18;
 
     event Deposit(address indexed user, uint256 amount);
@@ -41,13 +33,10 @@ contract BarnFacet is IBarn {
 
         ds.bond = IERC20(_bond);
         ds.rewards = IRewards(_rewards);
-        ds.communityVault = _cv;
-        ds.treasury = _treasury;
-        ds.otherBondLocked = 500_000e18;
     }
 
     // deposit allows a user to add more bond to his staked balance
-    function deposit(uint256 amount) override public {
+    function deposit(uint256 amount) public {
         require(amount > 0, "Amount must be greater than 0");
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
@@ -75,7 +64,7 @@ contract BarnFacet is IBarn {
     }
 
     // withdraw allows a user to withdraw funds if the balance is not locked
-    function withdraw(uint256 amount) override public {
+    function withdraw(uint256 amount) public {
         require(amount > 0, "Amount must be greater than 0");
         require(userLockedUntil(msg.sender) <= block.timestamp, "User balance is locked");
 
@@ -107,7 +96,7 @@ contract BarnFacet is IBarn {
     }
 
     // lock a user's currently staked balance until timestamp & add the bonus to his voting power
-    function lock(uint256 timestamp) override public {
+    function lock(uint256 timestamp) public {
         _lock(msg.sender, timestamp);
 
         emit Lock(msg.sender, timestamp);
@@ -119,7 +108,7 @@ contract BarnFacet is IBarn {
     }
 
     // delegate allows a user to delegate his voting power to another user
-    function delegate(address to) override public {
+    function delegate(address to) public {
         require(msg.sender != to, "Can't delegate to self");
 
         uint256 senderBalance = balanceOf(msg.sender);
@@ -151,12 +140,12 @@ contract BarnFacet is IBarn {
     }
 
     // stopDelegate allows a user to take back the delegated voting power
-    function stopDelegate() override public {
+    function stopDelegate() public {
         return delegate(address(0));
     }
 
     // lock the balance of a proposal creator until the voting ends; only callable by DAO
-    function lockCreatorBalance(address user, uint256 timestamp) override public {
+    function lockCreatorBalance(address user, uint256 timestamp) public {
         LibOwnership.enforceIsContractOwner();
 
         _lock(user, timestamp);
@@ -167,36 +156,20 @@ contract BarnFacet is IBarn {
         emit LockCreatorBalance(user, timestamp);
     }
 
-    // bondCirculatingSupply returns the current circulating supply of BOND
-    function bondCirculatingSupply() override public view returns (uint256) {
-        uint256 completedVestingEpochs = (block.timestamp - VESTING_START) / VESTING_EPOCH_DURATION;
-        if (completedVestingEpochs > VESTING_PERIOD) {
-            completedVestingEpochs = VESTING_PERIOD;
-        }
-
-        uint256 totalVested = TOTAL_VESTING_BOND.sub(VESTING_BOND_PER_EPOCH * completedVestingEpochs);
-
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        uint256 lockedCommunityVault = ds.bond.balanceOf(ds.communityVault);
-        uint256 lockedTreasury = ds.bond.balanceOf(ds.treasury);
-
-        return TOTAL_BOND.sub(totalVested).sub(lockedCommunityVault).sub(lockedTreasury).sub(ds.otherBondLocked);
-    }
-
     // balanceOf returns the current BOND balance of a user (bonus not included)
-    function balanceOf(address user) override public view returns (uint256) {
+    function balanceOf(address user) public view returns (uint256) {
         return balanceAtTs(user, block.timestamp);
     }
 
     // balanceAtTs returns the amount of BOND that the user currently staked (bonus NOT included)
-    function balanceAtTs(address user, uint256 timestamp) override public view returns (uint256) {
+    function balanceAtTs(address user, uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
         return stake.amount;
     }
 
     // stakeAtTs returns the Stake object of the user that was valid at `timestamp`
-    function stakeAtTs(address user, uint256 timestamp) override public view returns (LibBarnStorage.Stake memory) {
+    function stakeAtTs(address user, uint256 timestamp) public view returns (LibBarnStorage.Stake memory) {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[user];
 
@@ -225,12 +198,12 @@ contract BarnFacet is IBarn {
     }
 
     // votingPower returns the voting power (bonus included) + delegated voting power for a user at the current block
-    function votingPower(address user) override public view returns (uint256) {
+    function votingPower(address user) public view returns (uint256) {
         return votingPowerAtTs(user, block.timestamp);
     }
 
     // votingPowerAtTs returns the voting power (bonus included) + delegated voting power for a user at a point in time
-    function votingPowerAtTs(address user, uint256 timestamp) override public view returns (uint256) {
+    function votingPowerAtTs(address user, uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
         uint256 ownVotingPower;
@@ -250,13 +223,13 @@ contract BarnFacet is IBarn {
     }
 
     // bondStaked returns the total raw amount of BOND staked at the current block
-    function bondStaked() override public view returns (uint256) {
+    function bondStaked() public view returns (uint256) {
         return bondStakedAtTs(block.timestamp);
     }
 
     // bondStakedAtTs returns the total raw amount of BOND users have deposited into the contract
     // it does not include any bonus
-    function bondStakedAtTs(uint256 timestamp) override public view returns (uint256) {
+    function bondStakedAtTs(uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         if (ds.bondStakedHistory.length == 0 || timestamp < ds.bondStakedHistory[0].timestamp) {
             return 0;
@@ -283,12 +256,12 @@ contract BarnFacet is IBarn {
     }
 
     // delegatedPower returns the total voting power that a user received from other users
-    function delegatedPower(address user) override public view returns (uint256) {
+    function delegatedPower(address user) public view returns (uint256) {
         return delegatedPowerAtTs(user, block.timestamp);
     }
 
     // delegatedPowerAtTs returns the total voting power that a user received from other users at a point in time
-    function delegatedPowerAtTs(address user, uint256 timestamp) override public view returns (uint256) {
+    function delegatedPowerAtTs(address user, uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         LibBarnStorage.Checkpoint[] storage checkpoints = ds.delegatedPowerHistory[user];
 
@@ -318,7 +291,7 @@ contract BarnFacet is IBarn {
 
     // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
     // it includes the decay mechanism
-    function multiplierAtTs(address user, uint256 timestamp) override public view returns (uint256) {
+    function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
         if (timestamp >= stake.expiryTimestamp) {
@@ -334,14 +307,14 @@ contract BarnFacet is IBarn {
     }
 
     // userLockedUntil returns the timestamp until the user's balance is locked
-    function userLockedUntil(address user) override public view returns (uint256) {
+    function userLockedUntil(address user) public view returns (uint256) {
         LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.expiryTimestamp;
     }
 
     // userDidDelegate returns the address to which a user delegated their voting power; address(0) if not delegated
-    function userDelegatedTo(address user) override public view returns (address) {
+    function userDelegatedTo(address user) public view returns (address) {
         LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.delegatedTo;
