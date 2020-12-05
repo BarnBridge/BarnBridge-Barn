@@ -14,6 +14,10 @@ contract ERC20Mock is ERC20("ERC20Mock", "MCK") {
         _mint(user, amount);
     }
 
+    function burnFrom(address user, uint256 amount) public {
+        _burn(user, amount);
+    }
+
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         transferFromCalled = true;
 

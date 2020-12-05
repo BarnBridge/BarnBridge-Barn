@@ -31,7 +31,7 @@ contract BarnFacet is IBarn {
     event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
     event LockCreatorBalance(address indexed user, uint256 timestamp);
 
-    function initBarn(address _bond, address _cv, address _treasury) public {
+    function initBarn(address _bond, address _cv, address _treasury, address _rewards) public {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
 
         require(!ds.initialized, "Barn: already initialized");
@@ -40,6 +40,7 @@ contract BarnFacet is IBarn {
         ds.initialized = true;
 
         ds.bond = IERC20(_bond);
+        ds.rewards = IRewards(_rewards);
         ds.communityVault = _cv;
         ds.treasury = _treasury;
         ds.otherBondLocked = 500_000e18;
@@ -52,6 +53,10 @@ contract BarnFacet is IBarn {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
         uint256 allowance = ds.bond.allowance(msg.sender, address(this));
         require(allowance >= amount, "Token allowance too small");
+
+        // this must be called before the user's balance is updated so the rewards contract can calculate
+        // the amount owed correctly
+        ds.rewards.registerUserAction(msg.sender);
 
         _updateUserBalance(ds.userStakeHistory[msg.sender], balanceOf(msg.sender).add(amount));
         _updateLockedBond(bondStakedAtTs(block.timestamp).add(amount));
@@ -78,6 +83,11 @@ contract BarnFacet is IBarn {
         require(balance >= amount, "Insufficient balance");
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+
+        // this must be called before the user's balance is updated so the rewards contract can calculate
+        // the amount owed correctly
+        ds.rewards.registerUserAction(msg.sender);
+
         _updateUserBalance(ds.userStakeHistory[msg.sender], balance.sub(amount));
         _updateLockedBond(bondStakedAtTs(block.timestamp).sub(amount));
 

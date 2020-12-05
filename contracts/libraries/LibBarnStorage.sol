@@ -3,6 +3,7 @@ pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IRewards.sol";
 
 library LibBarnStorage {
     bytes32 constant STORAGE_POSITION = keccak256("com.barnbridge.barn.storage");
@@ -37,6 +38,7 @@ library LibBarnStorage {
         mapping(address => uint256) delegateLock;
 
         IERC20 bond;
+        IRewards rewards;
 
         address communityVault;
         address treasury;
