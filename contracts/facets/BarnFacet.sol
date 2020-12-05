@@ -23,7 +23,7 @@ contract BarnFacet {
     event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
     event LockCreatorBalance(address indexed user, uint256 timestamp);
 
-    function initBarn(address _bond, address _cv, address _treasury, address _rewards) public {
+    function initBarn(address _bond, address _rewards) public {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
 
         require(!ds.initialized, "Barn: already initialized");
@@ -213,7 +213,7 @@ contract BarnFacet {
             ownVotingPower = 0;
         } else {
             uint256 balance = stake.amount;
-            uint256 multiplier = multiplierAtTs(user, timestamp);
+            uint256 multiplier = _stakeMultiplier(stake, timestamp);
             ownVotingPower = balance.mul(multiplier).div(BASE_MULTIPLIER);
         }
 
@@ -294,16 +294,7 @@ contract BarnFacet {
     function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
         LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
-        if (timestamp >= stake.expiryTimestamp) {
-            return BASE_MULTIPLIER;
-        }
-
-        uint256 diff = stake.expiryTimestamp - timestamp;
-        if (diff >= MAX_LOCK) {
-            return BASE_MULTIPLIER.mul(2);
-        }
-
-        return BASE_MULTIPLIER.add(diff.mul(BASE_MULTIPLIER).div(MAX_LOCK));
+        return _stakeMultiplier(stake, timestamp);
     }
 
     // userLockedUntil returns the timestamp until the user's balance is locked
@@ -328,7 +319,23 @@ contract BarnFacet {
         return ds.delegateLock[user];
     }
 
+    // _stakeMultiplier calculates the multiplier for the given stake at the given timestamp
+    function _stakeMultiplier(LibBarnStorage.Stake memory stake, uint256 timestamp) internal view returns (uint256) {
+        if (timestamp >= stake.expiryTimestamp) {
+            return BASE_MULTIPLIER;
+        }
+
+        uint256 diff = stake.expiryTimestamp - timestamp;
+        if (diff >= MAX_LOCK) {
+            return BASE_MULTIPLIER.mul(2);
+        }
+
+        return BASE_MULTIPLIER.add(diff.mul(BASE_MULTIPLIER).div(MAX_LOCK));
+    }
+
+    // _lock locks the `user`'s balance until `timestamp` which is a given time in the future
     function _lock(address user, uint256 timestamp) internal {
+        require(timestamp > block.timestamp, "Timestamp must be in the future");
         require(timestamp <= block.timestamp + MAX_LOCK, "Timestamp too big");
         require(balanceOf(user) > 0, "Sender has no balance");
 

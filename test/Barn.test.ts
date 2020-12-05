@@ -15,7 +15,6 @@ describe('Barn', function () {
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
     let flyingParrot: Signer, flyingParrotAddress: string;
-    let communityVault: Signer, treasury: Signer;
 
     let snapshotId: any;
 
@@ -37,7 +36,7 @@ describe('Barn', function () {
         rewardsMock = (await deploy.deployContract('RewardsMock')) as RewardsMock;
 
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
-        await barn.initBarn(bond.address, await communityVault.getAddress(), await treasury.getAddress(), rewardsMock.address);
+        await barn.initBarn(bond.address, rewardsMock.address);
     });
 
     beforeEach(async function () {
@@ -766,8 +765,6 @@ describe('Barn', function () {
     async function setupSigners () {
         const accounts = await ethers.getSigners();
         user = accounts[0];
-        communityVault = accounts[1];
-        treasury = accounts[2];
         happyPirate = accounts[3];
         flyingParrot = accounts[4];
 
