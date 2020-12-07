@@ -71,7 +71,7 @@ describe('Rewards', function () {
                 rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, endsAt, amount)
             ).to.not.be.reverted;
 
-            expect(await rewards.pullTokenFrom()).to.equal(flyingParrotAddress);
+            expect((await rewards.pullFeature()).source).to.equal(flyingParrotAddress);
         });
 
         it('can set barn address if called by owner', async function () {
