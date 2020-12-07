@@ -39,10 +39,6 @@ library LibBarnStorage {
 
         IERC20 bond;
         IRewards rewards;
-
-        address communityVault;
-        address treasury;
-        uint256 otherBondLocked;
     }
 
     function barnStorage() internal pure returns (Storage storage ds) {

@@ -15,7 +15,6 @@ describe('Barn', function () {
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
     let flyingParrot: Signer, flyingParrotAddress: string;
-    let communityVault: Signer, treasury: Signer;
 
     let snapshotId: any;
 
@@ -26,17 +25,18 @@ describe('Barn', function () {
         const cutFacet = await deploy.deployContract('DiamondCutFacet');
         const loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
         const ownershipFacet = await deploy.deployContract('OwnershipFacet');
+        const bondFacet = await deploy.deployContract('BondFacet');
         const barnFacet = await deploy.deployContract('BarnFacet');
         const diamond = await deploy.deployDiamond(
             'Barn',
-            [cutFacet, loupeFacet, ownershipFacet, barnFacet],
+            [cutFacet, loupeFacet, ownershipFacet, bondFacet, barnFacet],
             userAddress,
         );
 
         rewardsMock = (await deploy.deployContract('RewardsMock')) as RewardsMock;
 
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
-        await barn.initBarn(bond.address, await communityVault.getAddress(), await treasury.getAddress(), rewardsMock.address);
+        await barn.initBarn(bond.address, rewardsMock.address);
     });
 
     beforeEach(async function () {
@@ -273,17 +273,6 @@ describe('Barn', function () {
             await barn.connect(user).withdraw(amount);
 
             expect(await barn.delegatedPower(happyPirateAddress)).to.be.equal(0);
-        });
-    });
-
-    describe('bondCirculatingSupply', async function () {
-        it('returns current circulating supply of BOND', async function () {
-            await setupContracts();
-
-            const completedEpochs = (await helpers.getCurrentEpoch()) - 1;
-            const expectedValue = BigNumber.from(22000 * completedEpochs).mul(helpers.tenPow18);
-
-            expect(await barn.bondCirculatingSupply()).to.be.equal(expectedValue);
         });
     });
 
@@ -776,22 +765,12 @@ describe('Barn', function () {
     async function setupSigners () {
         const accounts = await ethers.getSigners();
         user = accounts[0];
-        communityVault = accounts[1];
-        treasury = accounts[2];
         happyPirate = accounts[3];
         flyingParrot = accounts[4];
 
         userAddress = await user.getAddress();
         happyPirateAddress = await happyPirate.getAddress();
         flyingParrotAddress = await flyingParrot.getAddress();
-    }
-
-    async function setupContracts () {
-        const cvValue = BigNumber.from(2800000).mul(helpers.tenPow18);
-        const treasuryValue = BigNumber.from(4500000).mul(helpers.tenPow18);
-
-        await bond.mint(await communityVault.getAddress(), cvValue);
-        await bond.mint(await treasury.getAddress(), treasuryValue);
     }
 
     async function prepareAccount (account: Signer, balance: BigNumber) {
