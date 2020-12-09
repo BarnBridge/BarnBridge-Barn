@@ -5,9 +5,7 @@ import '@nomiclabs/hardhat-etherscan';
 import 'hardhat-abi-exporter';
 import 'hardhat-typechain';
 import 'solidity-coverage';
-
-// no support yet for the following
-// require('buidler-gas-reporter')
+import 'hardhat-gas-reporter';
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
@@ -28,8 +26,12 @@ const cfg: HardhatUserConfig = {
     etherscan: config.etherscan,
 
     abiExporter: {
-        only: ['Barn', 'BarnFacet', 'BondFacet', 'OwnershipFacet', 'DiamondCutFacet', 'DiamondLoupeFacet'],
+        only: ['Barn', 'BarnFacet', 'BondFacet', 'OwnershipFacet', 'DiamondCutFacet', 'DiamondLoupeFacet', 'Rewards'],
         clear: true,
+    },
+
+    gasReporter: {
+        enabled: (process.env.REPORT_GAS) ? true : false,
     },
 };
 

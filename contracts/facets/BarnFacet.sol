@@ -15,7 +15,7 @@ contract BarnFacet {
     uint256 constant public MAX_LOCK = 365 days;
     uint256 constant BASE_MULTIPLIER = 1e18;
 
-    event Deposit(address indexed user, uint256 amount);
+    event Deposit(address indexed user, uint256 amount, uint256 newBalance);
     event Withdraw(address indexed user, uint256 amountWithdrew, uint256 amountLeft);
     event Lock(address indexed user, uint256 timestamp);
     event Delegate(address indexed from, address indexed to);
@@ -47,7 +47,8 @@ contract BarnFacet {
         // the amount owed correctly
         ds.rewards.registerUserAction(msg.sender);
 
-        _updateUserBalance(ds.userStakeHistory[msg.sender], balanceOf(msg.sender).add(amount));
+        uint256 newBalance = balanceOf(msg.sender).add(amount);
+        _updateUserBalance(ds.userStakeHistory[msg.sender], newBalance);
         _updateLockedBond(bondStakedAtTs(block.timestamp).add(amount));
 
         address delegatedTo = userDelegatedTo(msg.sender);
@@ -60,7 +61,7 @@ contract BarnFacet {
 
         ds.bond.transferFrom(msg.sender, address(this), amount);
 
-        emit Deposit(msg.sender, amount);
+        emit Deposit(msg.sender, amount, newBalance);
     }
 
     // withdraw allows a user to withdraw funds if the balance is not locked

@@ -1,22 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.7.1;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IBarn.sol";
-import "hardhat/console.sol";
 
 contract Rewards is Ownable {
     using SafeMath for uint256;
 
-    address public pullTokenFrom;
-    uint256 public pullStartAt;
-    uint256 public pullEndAt;
-    uint256 public pullDuration; // == pullEndAt - pullStartAt
-    uint256 public pullTotalAmount;
-    uint256 public lastPullTs;
     uint256 constant decimals = 10 ** 18;
+
+    struct Pull {
+        address source;
+        uint256 startTs;
+        uint256 endTs;
+        uint256 totalDuration;
+        uint256 totalAmount;
+    }
+
+    Pull public pullFeature;
+    uint256 public lastPullTs;
 
     uint256 public balanceBefore;
     uint256 public currentMultiplier;
@@ -25,14 +30,14 @@ contract Rewards is Ownable {
     mapping(address => uint256) public owed;
 
     IBarn public barn;
-    IERC20 public token;
+    IERC20 public rewardToken;
 
     event Claim(address indexed user, uint256 amount);
 
     constructor(address _owner, address _token, address _barn) {
         transferOwnership(_owner);
 
-        token = IERC20(_token);
+        rewardToken = IERC20(_token);
         barn = IBarn(_barn);
     }
 
@@ -54,7 +59,7 @@ contract Rewards is Ownable {
 
         owed[msg.sender] = 0;
 
-        token.transfer(msg.sender, amount);
+        rewardToken.transfer(msg.sender, amount);
 
         emit Claim(msg.sender, amount);
     }
@@ -63,7 +68,7 @@ contract Rewards is Ownable {
     // if it goes up, the multiplier is re-calculated
     // if it goes down, it only updates the known balance
     function ackFunds() public {
-        uint256 balanceNow = token.balanceOf(address(this));
+        uint256 balanceNow = rewardToken.balanceOf(address(this));
 
         if (balanceNow == 0 || balanceNow <= balanceBefore) {
             balanceBefore = balanceNow;
@@ -86,15 +91,15 @@ contract Rewards is Ownable {
 
     // setupPullToken is used to setup the rewards system; only callable by contract owner
     // set source to address(0) to disable the functionality
-    function setupPullToken(address source, uint256 startAt, uint256 endAt, uint256 amount) public {
+    function setupPullToken(address source, uint256 startTs, uint256 endTs, uint256 amount) public {
         require(msg.sender == owner(), '!owner');
 
-        pullTokenFrom = source;
-        pullStartAt = startAt;
-        pullEndAt = endAt;
-        pullDuration = endAt.sub(startAt);
-        pullTotalAmount = amount;
-        lastPullTs = startAt;
+        pullFeature.source = source;
+        pullFeature.startTs = startTs;
+        pullFeature.endTs = endTs;
+        pullFeature.totalDuration = endTs.sub(startTs);
+        pullFeature.totalAmount = amount;
+        lastPullTs = startTs;
     }
 
     // setBarn sets the address of the BarnBridge Barn into the state variable
@@ -109,14 +114,14 @@ contract Rewards is Ownable {
     // address supplied as `pullTokenFrom`, if enabled
     function _pullToken() internal {
         if (
-            pullTokenFrom == address(0) ||
-            block.timestamp < pullStartAt
+            pullFeature.source == address(0) ||
+            block.timestamp < pullFeature.startTs
         ) {
             return;
         }
 
-        uint256 timestampCap = pullEndAt;
-        if (block.timestamp < pullEndAt) {
+        uint256 timestampCap = pullFeature.endTs;
+        if (block.timestamp < pullFeature.endTs) {
             timestampCap = block.timestamp;
         }
 
@@ -125,11 +130,11 @@ contract Rewards is Ownable {
         }
 
         uint256 timeSinceLastPull = timestampCap.sub(lastPullTs);
-        uint256 shareToPull = timeSinceLastPull.mul(decimals).div(pullDuration);
-        uint256 amountToPull = pullTotalAmount.mul(shareToPull).div(decimals);
+        uint256 shareToPull = timeSinceLastPull.mul(decimals).div(pullFeature.totalDuration);
+        uint256 amountToPull = pullFeature.totalAmount.mul(shareToPull).div(decimals);
 
-        token.transferFrom(pullTokenFrom, address(this), amountToPull);
         lastPullTs = block.timestamp;
+        rewardToken.transferFrom(pullFeature.source, address(this), amountToPull);
     }
 
     // _calculateOwed calculates and updates the total amount that is owed to an user and updates the user's multiplier
