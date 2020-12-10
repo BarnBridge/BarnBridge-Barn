@@ -21,7 +21,6 @@ contract BarnFacet {
     event Delegate(address indexed from, address indexed to);
     event DelegatedPowerIncreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
     event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
-    event LockCreatorBalance(address indexed user, uint256 timestamp);
 
     function initBarn(address _bond, address _rewards) public {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
