@@ -35,8 +35,6 @@ library LibBarnStorage {
         // every delegate/stopDelegate call create a new checkpoint (max one per block)
         mapping(address => Checkpoint[]) delegatedPowerHistory;
 
-        mapping(address => uint256) delegateLock;
-
         IERC20 bond;
         IRewards rewards;
     }

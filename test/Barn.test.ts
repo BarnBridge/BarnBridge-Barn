@@ -25,11 +25,10 @@ describe('Barn', function () {
         const cutFacet = await deploy.deployContract('DiamondCutFacet');
         const loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
         const ownershipFacet = await deploy.deployContract('OwnershipFacet');
-        const bondFacet = await deploy.deployContract('BondFacet');
         const barnFacet = await deploy.deployContract('BarnFacet');
         const diamond = await deploy.deployDiamond(
             'Barn',
-            [cutFacet, loupeFacet, ownershipFacet, bondFacet, barnFacet],
+            [cutFacet, loupeFacet, ownershipFacet, barnFacet],
             userAddress,
         );
 
@@ -605,83 +604,6 @@ describe('Barn', function () {
         });
     });
 
-    describe('lockCreatorBalance', async function () {
-        it('reverts if not executed by owner', async function () {
-            const ts = await helpers.getLatestBlockTimestamp();
-            await expect(
-                barn.connect(happyPirate).lockCreatorBalance(flyingParrotAddress, ts + 3600)
-            ).to.be.revertedWith('Must be contract owner');
-        });
-
-        it('locks user balance and blocks the delegate feature', async function () {
-            await prepareAccount(happyPirate, amount);
-            await barn.connect(happyPirate).deposit(amount);
-
-            const ts = await helpers.getLatestBlockTimestamp();
-
-            await expect(
-                barn.connect(user).lockCreatorBalance(happyPirateAddress, ts + 3600)
-            ).to.not.be.reverted;
-
-            expect(await barn.userLockedUntil(happyPirateAddress)).to.equal(ts + 3600);
-            await expect(
-                barn.connect(happyPirate).delegate(flyingParrotAddress)
-            ).to.be.revertedWith('Delegate temporarily locked for proposal creator');
-            expect(await barn.userDelegateLockedUntil(happyPirateAddress)).to.equal(ts + 3600);
-        });
-
-        it('unlocks user balance after the time passed', async function () {
-            await prepareAccount(happyPirate, amount);
-            await barn.connect(happyPirate).deposit(amount);
-
-            const ts = await helpers.getLatestBlockTimestamp();
-            await barn.connect(user).lockCreatorBalance(happyPirateAddress, ts + 3600);
-
-            await helpers.moveAtTimestamp(ts + 3600 * 2);
-
-            await expect(barn.connect(happyPirate).delegate(flyingParrotAddress)).to.not.be.reverted;
-            await expect(barn.connect(happyPirate).withdraw(amount)).to.not.be.reverted;
-        });
-
-        it('reverts if user tries to un-delegate from a locked user', async function () {
-            await prepareAccount(happyPirate, amount);
-            await barn.connect(happyPirate).deposit(amount);
-
-            await prepareAccount(flyingParrot, amount);
-            await barn.connect(flyingParrot).deposit(amount);
-
-            await barn.connect(happyPirate).delegate(flyingParrotAddress);
-
-            const ts = await helpers.getLatestBlockTimestamp();
-            await barn.connect(user).lockCreatorBalance(flyingParrotAddress, ts + 3600);
-
-            await expect(
-                barn.connect(happyPirate).stopDelegate()
-            ).to.be.revertedWith('Delegate temporarily locked due to active proposal');
-
-            await expect(
-                barn.connect(happyPirate).delegate(userAddress)
-            ).to.be.revertedWith('Delegate temporarily locked due to active proposal');
-        });
-
-        it('reverts if user tries to withdraw while his balance is delegated to a locked user', async function () {
-            await prepareAccount(happyPirate, amount);
-            await barn.connect(happyPirate).deposit(amount);
-
-            await prepareAccount(flyingParrot, amount);
-            await barn.connect(flyingParrot).deposit(amount);
-
-            await barn.connect(happyPirate).delegate(flyingParrotAddress);
-
-            const ts = await helpers.getLatestBlockTimestamp();
-            await barn.connect(user).lockCreatorBalance(flyingParrotAddress, ts + 3600);
-
-            await expect(
-                barn.connect(happyPirate).withdraw(amount)
-            ).to.be.revertedWith('Withdraw temporarily locked due to active proposal');
-        });
-    });
-
     describe('events', async function () {
         it('emits Deposit on call to deposit()', async function () {
             await prepareAccount(happyPirate, amount);
@@ -750,15 +672,6 @@ describe('Barn', function () {
             const ts = await helpers.getLatestBlockTimestamp();
             await expect(barn.connect(happyPirate).lock(ts + 3600))
                 .to.emit(barn, 'Lock');
-        });
-
-        it('emits LockCreatorBalance on call to lockCreatorBalance()', async function () {
-            await prepareAccount(happyPirate, amount.mul(2));
-            await barn.connect(happyPirate).deposit(amount.mul(2));
-
-            const ts = await helpers.getLatestBlockTimestamp();
-            await expect(barn.connect(user).lockCreatorBalance(happyPirateAddress, ts + 3600))
-                .to.emit(barn, 'LockCreatorBalance');
         });
     });
 

@@ -83,8 +83,6 @@ contract BarnFacet {
 
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
-            require(ds.delegateLock[delegatedTo] < block.timestamp, "Withdraw temporarily locked due to active proposal");
-
             uint256 newDelegatedPower = delegatedPower(delegatedTo).sub(amount);
             _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], newDelegatedPower);
 
@@ -116,14 +114,11 @@ contract BarnFacet {
         require(senderBalance > 0, "No balance to delegate");
 
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        require(ds.delegateLock[msg.sender] < block.timestamp, "Delegate temporarily locked for proposal creator");
 
         emit Delegate(msg.sender, to);
 
         address delegatedTo = userDelegatedTo(msg.sender);
         if (delegatedTo != address(0)) {
-            require(ds.delegateLock[delegatedTo] < block.timestamp, "Delegate temporarily locked due to active proposal");
-
             uint256 newDelegatedPower = delegatedPower(delegatedTo).sub(senderBalance);
             _updateDelegatedPower(ds.delegatedPowerHistory[delegatedTo], newDelegatedPower);
 
@@ -143,18 +138,6 @@ contract BarnFacet {
     // stopDelegate allows a user to take back the delegated voting power
     function stopDelegate() public {
         return delegate(address(0));
-    }
-
-    // lock the balance of a proposal creator until the voting ends; only callable by DAO
-    function lockCreatorBalance(address user, uint256 timestamp) public {
-        LibOwnership.enforceIsContractOwner();
-
-        _lock(user, timestamp);
-
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        ds.delegateLock[user] = timestamp;
-
-        emit LockCreatorBalance(user, timestamp);
     }
 
     // balanceOf returns the current BOND balance of a user (bonus not included)
@@ -290,6 +273,11 @@ contract BarnFacet {
         return checkpoints[min].amount;
     }
 
+    // same as multiplierAtTs but for the current block timestamp
+    function multiplierOf(address user) public view returns (uint256) {
+        return multiplierAtTs(user, block.timestamp);
+    }
+
     // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
     // it includes the decay mechanism
     function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
@@ -310,14 +298,6 @@ contract BarnFacet {
         LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.delegatedTo;
-    }
-
-    // userDelegateLockedUntil returns the timestamp until a user's delegate feature is disabled;
-    // if the timestamp is in the past (or equal to 0), the feature is considered enabled
-    function userDelegateLockedUntil(address user) public view returns (uint256) {
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-
-        return ds.delegateLock[user];
     }
 
     // _stakeMultiplier calculates the multiplier for the given stake at the given timestamp
