@@ -2,7 +2,7 @@ import * as helpers from '../test/helpers/helpers';
 import { Contract } from 'ethers';
 import * as deploy from '../test/helpers/deploy';
 import { diamondAsFacet } from '../test/helpers/diamond';
-import { BarnFacet, BondFacet } from '../typechain';
+import { BarnFacet } from '../typechain';
 
 const facetAddresses = new Map([
     ['DiamondCutFacet', '0xED5B6c65140FA8681c3DFf6BA5EFDb7334dff870'],
