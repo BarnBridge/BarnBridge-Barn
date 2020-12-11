@@ -61,6 +61,9 @@ contract Rewards is Ownable {
 
         rewardToken.transfer(msg.sender, amount);
 
+        // acknowledge the amount that was transferred to the user
+        ackFunds();
+
         emit Claim(msg.sender, amount);
     }
 
