@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IBarn.sol";
 import "../libraries/LibBarnStorage.sol";
 import "../libraries/LibOwnership.sol";
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 

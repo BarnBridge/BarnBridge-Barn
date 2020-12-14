@@ -10,11 +10,12 @@ const zeroAddress = '0x0000000000000000000000000000000000000000';
 describe('Diamond', function () {
     let loupeFacet: Contract, cutFacet: Contract, ownershipFacet: Contract;
     let diamond: Contract, loupe: DiamondLoupeFacet, cut: DiamondCutFacet, ownership: OwnershipFacet;
-    let owner: Signer;
+    let owner: Signer, user: Signer;
 
     before(async () => {
         const signers = await ethers.getSigners();
         owner = signers[0];
+        user = signers[1];
 
         cutFacet = await deploy.deployContract('DiamondCutFacet');
         loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
@@ -168,6 +169,24 @@ describe('Diamond', function () {
 
             const test1 = (await diamondAsFacet(diamond, 'Test1Facet')) as Test1Facet;
             await expect(test1.test1Func1()).to.be.revertedWith('Diamond: Function does not exist');
+        });
+    });
+
+    describe('ownership',  function () {
+        it('returns owner', async function () {
+            expect(await ownership.owner()).to.equal(await owner.getAddress());
+        });
+
+        it('reverts if transferOwnership not called by owner', async function () {
+            await expect(ownership.connect(user).transferOwnership(await user.getAddress()))
+                .to.be.revertedWith('Must be contract owner');
+        });
+
+        it('allows transferOwnership if called by owner', async function () {
+            await expect(ownership.connect(owner).transferOwnership(await user.getAddress()))
+                .to.not.be.reverted;
+
+            expect(await ownership.owner()).to.equal(await user.getAddress());
         });
     });
 });

@@ -2,10 +2,11 @@ import { ethers } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
 import { expect } from 'chai';
-import { BarnFacet, Erc20Mock, RewardsMock } from '../typechain';
+import { BarnFacet, Erc20Mock, RewardsMock, MulticallMock } from '../typechain';
 import * as time from './helpers/time';
 import * as deploy from './helpers/deploy';
 import { diamondAsFacet } from './helpers/diamond';
+import { moveAtTimestamp } from './helpers/helpers';
 
 describe('Barn', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
@@ -104,6 +105,16 @@ describe('Barn', function () {
             await barn.connect(user).deposit(amount);
 
             expect(await barn.delegatedPower(happyPirateAddress)).to.be.equal(amount.mul(2));
+        });
+
+        it('works with multiple deposit in same block', async function () {
+            const multicall = (await deploy.deployContract('MulticallMock', [barn.address, bond.address])) as MulticallMock;
+
+            await bond.mint(multicall.address, amount.mul(5));
+
+            await multicall.multiDeposit(amount);
+
+            expect(await barn.balanceOf(multicall.address)).to.equal(amount.mul(3));
         });
     });
 
@@ -528,7 +539,7 @@ describe('Barn', function () {
         });
 
         it('records history of delegated power', async function () {
-            await prepareAccount(user, amount);
+            await prepareAccount(user, amount.mul(2));
             await barn.connect(user).deposit(amount);
 
             await prepareAccount(happyPirate, amount);
@@ -537,14 +548,21 @@ describe('Barn', function () {
             await barn.connect(user).delegate(flyingParrotAddress);
             const delegate1Ts = await helpers.getLatestBlockTimestamp();
 
+            await moveAtTimestamp(delegate1Ts + 100);
             await barn.connect(happyPirate).delegate(flyingParrotAddress);
             const delegate2Ts = await helpers.getLatestBlockTimestamp();
 
+            await moveAtTimestamp(delegate2Ts + 100);
+            await barn.connect(user).deposit(amount);
+            const delegate3Ts = await helpers.getLatestBlockTimestamp();
+
+            await moveAtTimestamp(delegate3Ts+100);
             await prepareAccount(flyingParrot, amount);
             await barn.connect(flyingParrot).deposit(amount);
             const depositTs = await helpers.getLatestBlockTimestamp();
 
-            expect(await barn.votingPowerAtTs(flyingParrotAddress, depositTs - 1)).to.be.equal(amount.mul(2));
+            expect(await barn.votingPowerAtTs(flyingParrotAddress, depositTs -1)).to.be.equal(amount.mul(3));
+            expect(await barn.votingPowerAtTs(flyingParrotAddress, delegate3Ts - 1)).to.be.equal(amount.mul(2));
             expect(await barn.votingPowerAtTs(flyingParrotAddress, delegate2Ts - 1)).to.be.equal(amount);
             expect(await barn.votingPowerAtTs(flyingParrotAddress, delegate1Ts - 1)).to.be.equal(0);
         });
@@ -555,6 +573,17 @@ describe('Barn', function () {
             await barn.connect(user).delegate(happyPirateAddress);
 
             expect(await barn.balanceOf(userAddress)).to.be.equal(amount);
+        });
+
+        it('works with multiple calls in the same block', async function () {
+            const multicall = (await deploy.deployContract('MulticallMock', [barn.address, bond.address])) as MulticallMock;
+
+            await bond.mint(multicall.address, amount);
+
+            await multicall.multiDelegate(amount, userAddress, happyPirateAddress);
+
+            expect(await barn.delegatedPower(userAddress)).to.equal(amount);
+            expect(await barn.delegatedPower(happyPirateAddress)).to.equal(0);
         });
     });
 
@@ -672,6 +701,28 @@ describe('Barn', function () {
             const ts = await helpers.getLatestBlockTimestamp();
             await expect(barn.connect(happyPirate).lock(ts + 3600))
                 .to.emit(barn, 'Lock');
+        });
+    });
+
+    describe('multiplierOf', function () {
+        it('returns the current multiplier of the user', async function () {
+            await prepareAccount(user, amount);
+            await barn.connect(user).deposit(amount);
+
+            let ts: number = await helpers.getLatestBlockTimestamp();
+            await helpers.setNextBlockTimestamp(ts + 5);
+
+            const lockExpiryTs = ts + 5 + time.year;
+            await barn.connect(user).lock(lockExpiryTs);
+
+            ts = await helpers.getLatestBlockTimestamp();
+
+            const expectedMultiplier = multiplierAtTs(lockExpiryTs, ts);
+            const actualMultiplier = await barn.multiplierOf(userAddress);
+
+            expect(
+                actualMultiplier
+            ).to.be.equal(expectedMultiplier);
         });
     });
 

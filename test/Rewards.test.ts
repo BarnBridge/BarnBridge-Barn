@@ -211,6 +211,7 @@ describe('Rewards', function () {
             expect(await bond.transferCalled()).to.be.true;
             expect(await bond.balanceOf(happyPirateAddress)).to.be.equal(expectedBalance1.add(expectedBalance2));
             expect(await rewards.owed(happyPirateAddress)).to.be.equal(0);
+            expect(await rewards.balanceBefore()).to.be.equal(0);
         });
 
         it('works with multiple users', async function () {
@@ -242,6 +243,70 @@ describe('Rewards', function () {
             const expectedReward = multiplier.mul(amount).div(helpers.tenPow18);
 
             expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward);
+        });
+
+        it('works fine after claim', async function () {
+            const { start, end } = await setupRewards();
+
+            await barn.deposit(happyPirateAddress, amount);
+            const deposit1Ts = await helpers.getLatestBlockTimestamp();
+            const expectedBalance1 = calcTotalReward(start, deposit1Ts, end-start, amount);
+
+            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
+
+            await barn.deposit(flyingParrotAddress, amount);
+            const deposit2Ts = await helpers.getLatestBlockTimestamp();
+            const multiplierAtDeposit2 = await rewards.currentMultiplier();
+            const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end-start, amount);
+
+            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
+
+            await barn.deposit(userAddress, amount);
+            const deposit3Ts = await helpers.getLatestBlockTimestamp();
+            const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end-start, amount);
+
+            expect(await bond.balanceOf(rewards.address))
+                .to.equal(expectedBalance1.add(expectedBalance2).add(expectedBalance3));
+
+            await helpers.moveAtTimestamp(start + 1*time.day);
+
+            await rewards.connect(happyPirate).claim();
+            const claim1Ts = await helpers.getLatestBlockTimestamp();
+            const claim1Multiplier = await rewards.currentMultiplier();
+            const expectedReward = claim1Multiplier.mul(amount).div(helpers.tenPow18);
+
+            expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward);
+
+            // after the first claim is executed, move 1 more day into the future which would increase the
+            // total reward by ~14.28 (one day worth of reward)
+            // happyPirate already claimed his reward for day 1 so he should only be able to claim one day worth of rewards
+            // flyingParrot did not claim before so he should be able to claim 2 days worth of rewards
+            // since there are 3 users, 1 day of rewards for one user is ~4.76 tokens
+            await helpers.moveAtTimestamp(start + 2*time.day);
+
+            await rewards.connect(happyPirate).claim();
+            const claim2Ts = await helpers.getLatestBlockTimestamp();
+
+            const expectedRewardDay2 = calcTotalReward(claim1Ts, claim2Ts, end-start, amount);
+            const expectedMultiplier = claim1Multiplier.add(expectedRewardDay2.mul(helpers.tenPow18).div(amount.mul(3)));
+
+            const claim2Multiplier = await rewards.currentMultiplier();
+            expect(claim2Multiplier).to.equal(expectedMultiplier);
+
+            const expectedReward2 = (claim2Multiplier.sub(claim1Multiplier)).mul(amount).div(helpers.tenPow18);
+            expect(
+                expectedReward2.gt(BigNumber.from(4).mul(helpers.tenPow18)) &&
+                expectedReward2.lt(BigNumber.from(5).mul(helpers.tenPow18))
+            ).to.be.true;
+            expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward.add(expectedReward2));
+
+            await rewards.connect(flyingParrot).claim();
+            const multiplier3 = await rewards.currentMultiplier();
+            const expectedReward3 = multiplier3.sub(multiplierAtDeposit2).mul(amount).div(helpers.tenPow18);
+            expect(
+                expectedReward3.gt(BigNumber.from(9).mul(helpers.tenPow18)) &&
+                expectedReward3.lt(BigNumber.from(10).mul(helpers.tenPow18))).to.be.true;
+            expect(await bond.balanceOf(flyingParrotAddress)).to.equal(expectedReward3);
         });
     });
 
