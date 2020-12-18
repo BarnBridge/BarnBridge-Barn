@@ -20,6 +20,16 @@ task('accounts', 'Prints the list of accounts', async (args, hre) => {
 // Some of the settings should be defined in `./config.js`.
 // Go to https://hardhat.org/config/ for the syntax.
 const cfg: HardhatUserConfig = {
+    solidity: {
+        version: '0.7.6',
+        settings: {
+            optimizer: {
+                enabled: true,
+                runs: 9999,
+            },
+        },
+    },
+
     defaultNetwork: 'hardhat',
 
     networks: config.networks,

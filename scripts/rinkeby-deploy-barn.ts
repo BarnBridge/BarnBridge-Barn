@@ -12,7 +12,7 @@ const facetAddresses = new Map([
 
 const _bond = '0x64496f51779e400C5E955228E56fA41563Fb4dd8';
 const _owner = '0x89d652C64d7CeE18F5DF53B24d9D29D130b18798';
-const _dao = '0x17Ec0520d762aae78e9628FF2C4DB473EfFCb62e';
+const _dao = '0x188f848591e6aE4A4Cc728d36Dcf8eCC1b44fEC5';
 
 async function main () {
     const facets = await getFacets();
@@ -26,7 +26,7 @@ async function main () {
         facets,
         _owner,
     );
-    console.log(`Diamond deployed at: ${diamond.address}`);
+    console.log(`Barn deployed at: ${diamond.address}`);
 
     const rewards = await deploy.deployContract('Rewards', [_dao, _bond, diamond.address]);
     console.log(`Rewards deployed at: ${rewards.address}`);
