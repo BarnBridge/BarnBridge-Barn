@@ -5,7 +5,6 @@ import * as time from './helpers/time';
 import { expect } from 'chai';
 import { BarnMock, Erc20Mock, Rewards } from '../typechain';
 import * as deploy from './helpers/deploy';
-import { describe } from 'mocha';
 
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 
@@ -19,7 +18,7 @@ describe('Rewards', function () {
     let flyingParrot: Signer, flyingParrotAddress: string;
     let communityVault: Signer, treasury: Signer;
 
-    let defaultStartAt: number, totalDuration: number, totalAmount: BigNumber;
+    let defaultStartAt: number;
 
     let snapshotId: any;
     let snapshotTs: number;
@@ -30,13 +29,14 @@ describe('Rewards', function () {
         await setupSigners();
         await setupContracts();
 
+        barn = (await deploy.deployContract('BarnMock')) as BarnMock;
+
         rewards = (await deploy.deployContract(
             'Rewards',
-            [await treasury.getAddress(), bond.address, zeroAddress])
+            [await treasury.getAddress(), bond.address, barn.address])
         ) as Rewards;
 
-        barn = (await deploy.deployContract('BarnMock', [rewards.address])) as BarnMock;
-        await rewards.connect(treasury).setBarn(barn.address);
+        await barn.setRewards(rewards.address);
     });
 
     beforeEach(async function () {
@@ -47,7 +47,7 @@ describe('Rewards', function () {
     afterEach(async function () {
         await ethers.provider.send('evm_revert', [snapshotId]);
 
-        await helpers.moveAtTimestamp(snapshotTs+5);
+        await helpers.moveAtTimestamp(snapshotTs + 5);
     });
 
     describe('General', function () {
@@ -74,6 +74,18 @@ describe('Rewards', function () {
             expect((await rewards.pullFeature()).source).to.equal(flyingParrotAddress);
         });
 
+        it('sanitizes the parameters on call to setPullToken', async function () {
+            const startAt = await helpers.getLatestBlockTimestamp();
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, 0, amount)
+            ).to.be.revertedWith('startTs is != 0 but endTs is before start');
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(helpers.zeroAddress, startAt, startAt + 100, amount)
+            ).to.be.revertedWith('startTs is != 0 but source not 0x0');
+        });
+
         it('can set barn address if called by owner', async function () {
             await expect(rewards.connect(happyPirate).setBarn(barn.address))
                 .to.be.revertedWith('!owner');
@@ -82,6 +94,11 @@ describe('Rewards', function () {
                 .to.not.be.reverted;
 
             expect(await rewards.barn()).to.equal(flyingParrotAddress);
+        });
+
+        it('reverts if setBarn called with 0x0', async function () {
+            await expect(rewards.connect(treasury).setBarn(helpers.zeroAddress))
+                .to.be.revertedWith('barn address must not be 0x0');
         });
     });
 
@@ -167,7 +184,7 @@ describe('Rewards', function () {
 
             expect(await bond.balanceOf(rewards.address)).to.equal(amount);
 
-            await helpers.moveAtTimestamp(end + 1*time.day);
+            await helpers.moveAtTimestamp(end + 1 * time.day);
             await barn.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(amount);
@@ -199,14 +216,14 @@ describe('Rewards', function () {
             await barn.deposit(happyPirateAddress, amount);
             const depositTs = await helpers.getLatestBlockTimestamp();
 
-            const expectedBalance1 = calcTotalReward(start, depositTs, end-start, amount);
+            const expectedBalance1 = calcTotalReward(start, depositTs, end - start, amount);
 
             await helpers.moveAtTimestamp(start + time.day);
 
             await expect(rewards.connect(happyPirate).claim()).to.not.be.reverted;
             const claimTs = await helpers.getLatestBlockTimestamp();
 
-            const expectedBalance2 = calcTotalReward(depositTs, claimTs, end-start, amount);
+            const expectedBalance2 = calcTotalReward(depositTs, claimTs, end - start, amount);
 
             expect(await bond.transferCalled()).to.be.true;
             expect(await bond.balanceOf(happyPirateAddress)).to.be.equal(expectedBalance1.add(expectedBalance2));
@@ -219,24 +236,24 @@ describe('Rewards', function () {
 
             await barn.deposit(happyPirateAddress, amount);
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
-            const expectedBalance1 = calcTotalReward(start, deposit1Ts, end-start, amount);
+            const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
             await barn.deposit(flyingParrotAddress, amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
-            const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end-start, amount);
+            const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
             await barn.deposit(userAddress, amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
-            const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end-start, amount);
+            const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address))
                 .to.equal(expectedBalance1.add(expectedBalance2).add(expectedBalance3));
 
-            await helpers.moveAtTimestamp(start + 10*time.day);
+            await helpers.moveAtTimestamp(start + 10 * time.day);
 
             await rewards.connect(happyPirate).claim();
             const multiplier = await rewards.currentMultiplier();
@@ -250,25 +267,25 @@ describe('Rewards', function () {
 
             await barn.deposit(happyPirateAddress, amount);
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
-            const expectedBalance1 = calcTotalReward(start, deposit1Ts, end-start, amount);
+            const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
             await barn.deposit(flyingParrotAddress, amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const multiplierAtDeposit2 = await rewards.currentMultiplier();
-            const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end-start, amount);
+            const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
             await barn.deposit(userAddress, amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
-            const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end-start, amount);
+            const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address))
                 .to.equal(expectedBalance1.add(expectedBalance2).add(expectedBalance3));
 
-            await helpers.moveAtTimestamp(start + 1*time.day);
+            await helpers.moveAtTimestamp(start + 1 * time.day);
 
             await rewards.connect(happyPirate).claim();
             const claim1Ts = await helpers.getLatestBlockTimestamp();
@@ -282,12 +299,12 @@ describe('Rewards', function () {
             // happyPirate already claimed his reward for day 1 so he should only be able to claim one day worth of rewards
             // flyingParrot did not claim before so he should be able to claim 2 days worth of rewards
             // since there are 3 users, 1 day of rewards for one user is ~4.76 tokens
-            await helpers.moveAtTimestamp(start + 2*time.day);
+            await helpers.moveAtTimestamp(start + 2 * time.day);
 
             await rewards.connect(happyPirate).claim();
             const claim2Ts = await helpers.getLatestBlockTimestamp();
 
-            const expectedRewardDay2 = calcTotalReward(claim1Ts, claim2Ts, end-start, amount);
+            const expectedRewardDay2 = calcTotalReward(claim1Ts, claim2Ts, end - start, amount);
             const expectedMultiplier = claim1Multiplier.add(expectedRewardDay2.mul(helpers.tenPow18).div(amount.mul(3)));
 
             const claim2Multiplier = await rewards.currentMultiplier();
@@ -310,7 +327,7 @@ describe('Rewards', function () {
         });
     });
 
-    async function setupRewards () : Promise<{start:number, end:number}> {
+    async function setupRewards (): Promise<{ start: number, end: number }> {
         const startAt = await helpers.getLatestBlockTimestamp();
         const endsAt = startAt + 60 * 60 * 24 * 7;
         await rewards.connect(treasury).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
@@ -319,7 +336,7 @@ describe('Rewards', function () {
         return { start: startAt, end: endsAt };
     }
 
-    function calcTotalReward (startTs:number, endTs:number, totalDuration: number, totalAmount: BigNumber):BigNumber {
+    function calcTotalReward (startTs: number, endTs: number, totalDuration: number, totalAmount: BigNumber): BigNumber {
         const diff = endTs - startTs;
         const shareToPull = BigNumber.from(diff).mul(helpers.tenPow18).div(totalDuration);
 

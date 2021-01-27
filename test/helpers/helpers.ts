@@ -3,6 +3,7 @@
 import { ethers } from 'hardhat';
 import { BigNumber, Contract } from 'ethers';
 
+export const zeroAddress = '0x0000000000000000000000000000000000000000';
 export const stakingEpochStart = 1603065600;
 export const stakingEpochDuration = 604800;
 export const tenPow18 = BigNumber.from(10).pow(18);

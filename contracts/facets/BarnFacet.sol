@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.1;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IBarn.sol";
@@ -22,6 +22,8 @@ contract BarnFacet {
     event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
 
     function initBarn(address _bond, address _rewards) public {
+        require(_bond != address(0), "BOND address must not be 0x0");
+
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
 
         require(!ds.initialized, "Barn: already initialized");
@@ -43,7 +45,9 @@ contract BarnFacet {
 
         // this must be called before the user's balance is updated so the rewards contract can calculate
         // the amount owed correctly
-        ds.rewards.registerUserAction(msg.sender);
+        if (address(ds.rewards) != address(0)) {
+            ds.rewards.registerUserAction(msg.sender);
+        }
 
         uint256 newBalance = balanceOf(msg.sender).add(amount);
         _updateUserBalance(ds.userStakeHistory[msg.sender], newBalance);
@@ -74,7 +78,9 @@ contract BarnFacet {
 
         // this must be called before the user's balance is updated so the rewards contract can calculate
         // the amount owed correctly
-        ds.rewards.registerUserAction(msg.sender);
+        if (address(ds.rewards) != address(0)) {
+            ds.rewards.registerUserAction(msg.sender);
+        }
 
         _updateUserBalance(ds.userStakeHistory[msg.sender], balance.sub(amount));
         _updateLockedBond(bondStakedAtTs(block.timestamp).sub(amount));
@@ -94,7 +100,17 @@ contract BarnFacet {
 
     // lock a user's currently staked balance until timestamp & add the bonus to his voting power
     function lock(uint256 timestamp) public {
-        _lock(msg.sender, timestamp);
+        require(timestamp > block.timestamp, "Timestamp must be in the future");
+        require(timestamp <= block.timestamp + MAX_LOCK, "Timestamp too big");
+        require(balanceOf(msg.sender) > 0, "Sender has no balance");
+
+        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[msg.sender];
+        LibBarnStorage.Stake storage currentStake = checkpoints[checkpoints.length - 1];
+
+        require(timestamp > currentStake.expiryTimestamp, "New timestamp lower than current lock timestamp");
+
+        _updateUserLock(checkpoints, timestamp);
 
         emit Lock(msg.sender, timestamp);
     }
@@ -153,30 +169,30 @@ contract BarnFacet {
     // stakeAtTs returns the Stake object of the user that was valid at `timestamp`
     function stakeAtTs(address user, uint256 timestamp) public view returns (LibBarnStorage.Stake memory) {
         LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[user];
+        LibBarnStorage.Stake[] storage stakeHistory = ds.userStakeHistory[user];
 
-        if (checkpoints.length == 0 || timestamp < checkpoints[0].timestamp) {
+        if (stakeHistory.length == 0 || timestamp < stakeHistory[0].timestamp) {
             return LibBarnStorage.Stake(block.timestamp, 0, block.timestamp, address(0));
         }
 
         uint256 min = 0;
-        uint256 max = checkpoints.length - 1;
+        uint256 max = stakeHistory.length - 1;
 
-        if (timestamp >= checkpoints[max].timestamp) {
-            return checkpoints[max];
+        if (timestamp >= stakeHistory[max].timestamp) {
+            return stakeHistory[max];
         }
 
         // binary search of the value in the array
         while (max > min) {
             uint256 mid = (max + min + 1) / 2;
-            if (checkpoints[mid].timestamp <= timestamp) {
+            if (stakeHistory[mid].timestamp <= timestamp) {
                 min = mid;
             } else {
                 max = mid - 1;
             }
         }
 
-        return checkpoints[min];
+        return stakeHistory[min];
     }
 
     // votingPower returns the voting power (bonus included) + delegated voting power for a user at the current block
@@ -212,29 +228,7 @@ contract BarnFacet {
     // bondStakedAtTs returns the total raw amount of BOND users have deposited into the contract
     // it does not include any bonus
     function bondStakedAtTs(uint256 timestamp) public view returns (uint256) {
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        if (ds.bondStakedHistory.length == 0 || timestamp < ds.bondStakedHistory[0].timestamp) {
-            return 0;
-        }
-
-        uint256 min = 0;
-        uint256 max = ds.bondStakedHistory.length - 1;
-
-        if (timestamp >= ds.bondStakedHistory[max].timestamp) {
-            return ds.bondStakedHistory[max].amount;
-        }
-
-        // binary search of the value in the array
-        while (max > min) {
-            uint256 mid = (max + min + 1) / 2;
-            if (ds.bondStakedHistory[mid].timestamp <= timestamp) {
-                min = mid;
-            } else {
-                max = mid - 1;
-            }
-        }
-
-        return ds.bondStakedHistory[min].amount;
+        return _checkpointsBinarySearch(LibBarnStorage.barnStorage().bondStakedHistory, timestamp);
     }
 
     // delegatedPower returns the total voting power that a user received from other users
@@ -244,9 +238,39 @@ contract BarnFacet {
 
     // delegatedPowerAtTs returns the total voting power that a user received from other users at a point in time
     function delegatedPowerAtTs(address user, uint256 timestamp) public view returns (uint256) {
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        LibBarnStorage.Checkpoint[] storage checkpoints = ds.delegatedPowerHistory[user];
+        return _checkpointsBinarySearch(LibBarnStorage.barnStorage().delegatedPowerHistory[user], timestamp);
+    }
 
+    // same as multiplierAtTs but for the current block timestamp
+    function multiplierOf(address user) public view returns (uint256) {
+        return multiplierAtTs(user, block.timestamp);
+    }
+
+    // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
+    // it includes the decay mechanism
+    function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
+        LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
+
+        return _stakeMultiplier(stake, timestamp);
+    }
+
+    // userLockedUntil returns the timestamp until the user's balance is locked
+    function userLockedUntil(address user) public view returns (uint256) {
+        LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
+
+        return c.expiryTimestamp;
+    }
+
+    // userDelegatedTo returns the address to which a user delegated their voting power; address(0) if not delegated
+    function userDelegatedTo(address user) public view returns (address) {
+        LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
+
+        return c.delegatedTo;
+    }
+
+    // _checkpointsBinarySearch executes a binary search on a list of checkpoints that's sorted chronologically
+    // looking for the closest checkpoint that matches the specified timestamp
+    function _checkpointsBinarySearch(LibBarnStorage.Checkpoint[] storage checkpoints, uint256 timestamp) internal view returns (uint256) {
         if (checkpoints.length == 0 || timestamp < checkpoints[0].timestamp) {
             return 0;
         }
@@ -271,33 +295,6 @@ contract BarnFacet {
         return checkpoints[min].amount;
     }
 
-    // same as multiplierAtTs but for the current block timestamp
-    function multiplierOf(address user) public view returns (uint256) {
-        return multiplierAtTs(user, block.timestamp);
-    }
-
-    // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
-    // it includes the decay mechanism
-    function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
-        LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
-
-        return _stakeMultiplier(stake, timestamp);
-    }
-
-    // userLockedUntil returns the timestamp until the user's balance is locked
-    function userLockedUntil(address user) public view returns (uint256) {
-        LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
-
-        return c.expiryTimestamp;
-    }
-
-    // userDidDelegate returns the address to which a user delegated their voting power; address(0) if not delegated
-    function userDelegatedTo(address user) public view returns (address) {
-        LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
-
-        return c.delegatedTo;
-    }
-
     // _stakeMultiplier calculates the multiplier for the given stake at the given timestamp
     function _stakeMultiplier(LibBarnStorage.Stake memory stake, uint256 timestamp) internal view returns (uint256) {
         if (timestamp >= stake.expiryTimestamp) {
@@ -310,21 +307,6 @@ contract BarnFacet {
         }
 
         return BASE_MULTIPLIER.add(diff.mul(BASE_MULTIPLIER).div(MAX_LOCK));
-    }
-
-    // _lock locks the `user`'s balance until `timestamp` which is a given time in the future
-    function _lock(address user, uint256 timestamp) internal {
-        require(timestamp > block.timestamp, "Timestamp must be in the future");
-        require(timestamp <= block.timestamp + MAX_LOCK, "Timestamp too big");
-        require(balanceOf(user) > 0, "Sender has no balance");
-
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[user];
-        LibBarnStorage.Stake storage currentStake = checkpoints[checkpoints.length - 1];
-
-        require(timestamp > currentStake.expiryTimestamp, "New timestamp lower than current lock timestamp");
-
-        _updateUserLock(checkpoints, timestamp);
     }
 
     // _updateUserBalance manages an array of checkpoints
