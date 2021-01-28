@@ -111,7 +111,10 @@ contract Rewards is Ownable {
         pullFeature.endTs = endTs;
         pullFeature.totalDuration = endTs.sub(startTs);
         pullFeature.totalAmount = amount;
-        lastPullTs = startTs;
+
+        if (lastPullTs < startTs) {
+            lastPullTs = startTs;
+        }
     }
 
     // setBarn sets the address of the BarnBridge Barn into the state variable
