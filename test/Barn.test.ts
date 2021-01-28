@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
 import { expect } from 'chai';
-import { BarnFacet, Erc20Mock, RewardsMock, MulticallMock } from '../typechain';
+import { BarnFacet, Erc20Mock, RewardsMock, MulticallMock, ChangeRewardsFacet } from '../typechain';
 import * as time from './helpers/time';
 import * as deploy from './helpers/deploy';
 import { diamondAsFacet } from './helpers/diamond';
@@ -11,7 +11,7 @@ import { moveAtTimestamp } from './helpers/helpers';
 describe('Barn', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let barn: BarnFacet, bond: Erc20Mock, rewardsMock: RewardsMock;
+    let barn: BarnFacet, bond: Erc20Mock, rewardsMock: RewardsMock, changeRewards: ChangeRewardsFacet;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -27,14 +27,16 @@ describe('Barn', function () {
         const loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
         const ownershipFacet = await deploy.deployContract('OwnershipFacet');
         const barnFacet = await deploy.deployContract('BarnFacet');
+        const changeRewardsFacet = await deploy.deployContract('ChangeRewardsFacet');
         const diamond = await deploy.deployDiamond(
             'Barn',
-            [cutFacet, loupeFacet, ownershipFacet, barnFacet],
+            [cutFacet, loupeFacet, ownershipFacet, barnFacet, changeRewardsFacet],
             userAddress,
         );
 
         rewardsMock = (await deploy.deployContract('RewardsMock')) as RewardsMock;
 
+        changeRewards = (await diamondAsFacet(diamond, 'ChangeRewardsFacet')) as ChangeRewardsFacet;
         barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
         await barn.initBarn(bond.address, rewardsMock.address);
     });
@@ -115,6 +117,14 @@ describe('Barn', function () {
             await multicall.multiDeposit(amount);
 
             expect(await barn.balanceOf(multicall.address)).to.equal(amount.mul(3));
+        });
+
+        it('does not fail if rewards contract is set to address(0)', async function () {
+            await changeRewards.changeRewardsAddress(helpers.zeroAddress);
+
+            await prepareAccount(user, amount);
+            await expect(barn.connect(user).deposit(amount)).to.not.be.reverted;
+            expect(await barn.balanceOf(userAddress)).to.equal(amount);
         });
     });
 

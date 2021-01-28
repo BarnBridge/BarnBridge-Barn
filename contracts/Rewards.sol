@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.1;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -35,6 +35,9 @@ contract Rewards is Ownable {
     event Claim(address indexed user, uint256 amount);
 
     constructor(address _owner, address _token, address _barn) {
+        require(_token != address(0), "reward token must not be 0x0");
+        require(_barn != address(0), "barn address must not be 0x0");
+
         transferOwnership(_owner);
 
         rewardToken = IERC20(_token);
@@ -51,7 +54,7 @@ contract Rewards is Ownable {
     }
 
     // claim calculates the currently owed reward and transfers the funds to the user
-    function claim() public {
+    function claim() public returns (uint256){
         _calculateOwed(msg.sender);
 
         uint256 amount = owed[msg.sender];
@@ -65,6 +68,8 @@ contract Rewards is Ownable {
         ackFunds();
 
         emit Claim(msg.sender, amount);
+
+        return amount;
     }
 
     // ackFunds checks the difference between the last known balance of `token` and the current one
@@ -95,6 +100,10 @@ contract Rewards is Ownable {
     // setupPullToken is used to setup the rewards system; only callable by contract owner
     // set source to address(0) to disable the functionality
     function setupPullToken(address source, uint256 startTs, uint256 endTs, uint256 amount) public {
+        if (startTs > 0) {
+            require(endTs >= startTs, "startTs is != 0 but endTs is before start");
+            require(source != address(0), "startTs is != 0 but source not 0x0");
+        }
         require(msg.sender == owner(), '!owner');
 
         pullFeature.source = source;
@@ -107,6 +116,7 @@ contract Rewards is Ownable {
 
     // setBarn sets the address of the BarnBridge Barn into the state variable
     function setBarn(address _barn) public {
+        require(_barn != address(0), 'barn address must not be 0x0');
         require(msg.sender == owner(), '!owner');
 
         barn = IBarn(_barn);

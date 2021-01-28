@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.1;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IDiamondCut.sol";
@@ -138,7 +138,7 @@ library LibDiamond {
 
     function initializeDiamondCut(address _init, bytes memory _calldata) internal {
         if (_init == address(0)) {
-            require(_calldata.length == 0, "LibDiamondCut: _init is address(0) but_calldata is not empty");
+            require(_calldata.length == 0, "LibDiamondCut: _init is address(0) but _calldata is not empty");
             return;
         }
 

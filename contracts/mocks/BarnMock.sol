@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.1;
+pragma solidity 0.7.6;
 
 import "../interfaces/IRewards.sol";
 
@@ -8,7 +8,7 @@ contract BarnMock {
     uint256 public bondStaked;
     mapping(address => uint256) private balances;
 
-    constructor(address rewards) {
+    function setRewards(address rewards) public {
         r = IRewards(rewards);
     }
 

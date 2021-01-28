@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.1;
+pragma solidity 0.7.6;
 
 import "../libraries/LibOwnership.sol";
 import "../interfaces/IERC173.sol";

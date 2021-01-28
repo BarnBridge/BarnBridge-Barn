@@ -4,8 +4,7 @@ import * as deploy from './helpers/deploy';
 import { Contract, Signer } from 'ethers';
 import { diamondAsFacet, FacetCutAction, getSelectors } from './helpers/diamond';
 import { DiamondCutFacet, DiamondLoupeFacet, OwnershipFacet, Test1Facet, Test2Facet } from '../typechain';
-
-const zeroAddress = '0x0000000000000000000000000000000000000000';
+import { zeroAddress } from './helpers/helpers';
 
 describe('Diamond', function () {
     let loupeFacet: Contract, cutFacet: Contract, ownershipFacet: Contract;
@@ -180,6 +179,11 @@ describe('Diamond', function () {
         it('reverts if transferOwnership not called by owner', async function () {
             await expect(ownership.connect(user).transferOwnership(await user.getAddress()))
                 .to.be.revertedWith('Must be contract owner');
+        });
+
+        it('reverts if transferOwnership called with same address', async function () {
+            await expect(ownership.connect(owner).transferOwnership(await owner.getAddress()))
+                .to.be.revertedWith('Previous owner and new owner must be different');
         });
 
         it('allows transferOwnership if called by owner', async function () {

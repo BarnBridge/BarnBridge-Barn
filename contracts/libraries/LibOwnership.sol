@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.1;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./LibDiamondStorage.sol";
@@ -11,6 +11,8 @@ library LibOwnership {
         LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
 
         address previousOwner = ds.contractOwner;
+        require(previousOwner != _newOwner, "Previous owner and new owner must be different");
+
         ds.contractOwner = _newOwner;
 
         emit OwnershipTransferred(previousOwner, _newOwner);
