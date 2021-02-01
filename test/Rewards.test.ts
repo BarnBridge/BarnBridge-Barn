@@ -77,13 +77,51 @@ describe('Rewards', function () {
         it('sanitizes the parameters on call to setPullToken', async function () {
             const startAt = await helpers.getLatestBlockTimestamp();
 
+            // checks on contract setup
+            await expect(
+                rewards.connect(treasury).setupPullToken(helpers.zeroAddress, startAt, startAt + 100, amount)
+            ).to.be.revertedWith('contract is not setup, source must be != 0x0');
+
             await expect(
                 rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, 0, amount)
-            ).to.be.revertedWith('startTs is != 0 but endTs is before start');
+            ).to.be.revertedWith('endTs must be greater than startTs');
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, startAt + 100, 0)
+            ).to.be.revertedWith('setup contract: amount must be greater than 0');
+
+            // setup the contract correctly and test contract disabling
+            await expect(
+                rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, startAt + 100, amount)
+            ).to.not.be.reverted;
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, 0, amount)
+            ).to.be.revertedWith('contract is already set up, source must be 0x0');
 
             await expect(
                 rewards.connect(treasury).setupPullToken(helpers.zeroAddress, startAt, startAt + 100, amount)
-            ).to.be.revertedWith('startTs is != 0 but source not 0x0');
+            ).to.be.revertedWith('disable contract: startTs must be 0');
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(helpers.zeroAddress, 0, startAt + 100, amount)
+            ).to.be.revertedWith('disable contract: endTs must be 0');
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(helpers.zeroAddress, 0, 0, amount)
+            ).to.be.revertedWith('disable contract: amount must be 0');
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(helpers.zeroAddress, 0, 0, 0)
+            ).to.not.be.reverted;
+
+            expect((await rewards.pullFeature()).source).to.be.equal(helpers.zeroAddress);
+
+            expect(await rewards.disabled()).to.equal(true);
+
+            await expect(
+                rewards.connect(treasury).setupPullToken(flyingParrotAddress, startAt, startAt + 100, amount)
+            ).to.be.revertedWith('contract is disabled');
         });
 
         it('can set barn address if called by owner', async function () {
@@ -154,7 +192,6 @@ describe('Rewards', function () {
         });
 
         it('does not pull bond if function is disabled', async function () {
-            await rewards.connect(treasury).setupPullToken(zeroAddress, 0, 0, 0);
             await barn.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(0);
