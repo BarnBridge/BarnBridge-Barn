@@ -21,6 +21,7 @@ contract Rewards is Ownable {
     }
 
     Pull public pullFeature;
+    bool public disabled;
     uint256 public lastPullTs;
 
     uint256 public balanceBefore;
@@ -100,11 +101,24 @@ contract Rewards is Ownable {
     // setupPullToken is used to setup the rewards system; only callable by contract owner
     // set source to address(0) to disable the functionality
     function setupPullToken(address source, uint256 startTs, uint256 endTs, uint256 amount) public {
-        if (startTs > 0) {
-            require(endTs >= startTs, "startTs is != 0 but endTs is before start");
-            require(source != address(0), "startTs is != 0 but source not 0x0");
+        require(msg.sender == owner(), "!owner");
+        require(!disabled, "contract is disabled");
+
+        if (pullFeature.source != address(0)) {
+            require(source == address(0), "contract is already set up, source must be 0x0");
+            disabled = true;
+        } else {
+            require(source != address(0), "contract is not setup, source must be != 0x0");
         }
-        require(msg.sender == owner(), '!owner');
+
+        if (source == address(0)) {
+            require(startTs == 0, "disable contract: startTs must be 0");
+            require(endTs == 0, "disable contract: endTs must be 0");
+            require(amount == 0, "disable contract: amount must be 0");
+        } else {
+            require(endTs > startTs, "setup contract: endTs must be greater than startTs");
+            require(amount > 0, "setup contract: amount must be greater than 0");
+        }
 
         pullFeature.source = source;
         pullFeature.startTs = startTs;
