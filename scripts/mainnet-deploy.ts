@@ -1,9 +1,17 @@
 import * as deploy from '../test/helpers/deploy';
 import { diamondAsFacet } from '../test/helpers/diamond';
-import { BarnFacet } from '../typechain';
+import { BarnFacet, Rewards } from '../typechain';
+import { BigNumber } from 'ethers';
+import * as helpers from '../test/helpers/helpers';
 
 const _owner = '0x89d652C64d7CeE18F5DF53B24d9D29D130b18798';
 const _bond = '0x0391D2021f89DC339F60Fff84546EA23E337750f';
+
+// needed for rewards setup
+const _cv = '0xA3C299eEE1998F45c20010276684921EBE6423D9';
+const startTs = 1612742400;
+const endTs = 1642982400;
+const rewardsAmount = BigNumber.from(610000).mul(helpers.tenPow18);
 
 async function main () {
     const cutFacet = await deploy.deployContract('DiamondCutFacet');
@@ -28,12 +36,14 @@ async function main () {
     );
     console.log(`Barn deployed at: ${diamond.address}`);
 
-    const rewards = await deploy.deployContract('Rewards', [_owner, _bond, diamond.address]);
+    const rewards = (await deploy.deployContract('Rewards', [_owner, _bond, diamond.address])) as Rewards;
     console.log(`Rewards deployed at: ${rewards.address}`);
 
     console.log('Calling initBarn');
     const barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
     await barn.initBarn(_bond, rewards.address);
+
+    rewards.setupPullToken(_cv, startTs, endTs, rewardsAmount);
 }
 
 main()
