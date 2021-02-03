@@ -43,7 +43,7 @@ async function main () {
     const barn = (await diamondAsFacet(diamond, 'BarnFacet')) as BarnFacet;
     await barn.initBarn(_bond, rewards.address);
 
-    rewards.setupPullToken(_cv, startTs, endTs, rewardsAmount);
+    await rewards.setupPullToken(_cv, startTs, endTs, rewardsAmount);
 }
 
 main()
