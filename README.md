@@ -1,9 +1,5 @@
 ## BOND staking / locking + Rewards
 
-## Audits
-- [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/Quantstamp-DAO.pdf) | 
-- [Haechi](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/HAECHI-DAO.pdf)
-
 ## Architecture
 - Diamond Standard for upgradeability
     - started from the reference implementation [here](https://github.com/mudgen/diamond-1) which was refactored
@@ -71,3 +67,7 @@ where:
 - userBalance = barn.balanceOf(user) -- the amount of $BOND staked into the Barn
 ```
 3. update the oldUserMultiplier with the current multiplier -- signaling that we already calculated how much was owed to the user since his last action
+
+## Audits
+- [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/Quantstamp-DAO.pdf)
+- [Haechi](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/HAECHI-DAO.pdf)
