@@ -1,4 +1,4 @@
-import { task, HardhatUserConfig } from 'hardhat/config';
+import { HardhatUserConfig, task } from 'hardhat/config';
 import * as config from './config';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
@@ -37,7 +37,9 @@ const cfg: HardhatUserConfig = {
 
     abiExporter: {
         only: ['Barn', 'BarnFacet', 'OwnershipFacet', 'DiamondCutFacet', 'DiamondLoupeFacet', 'Rewards'],
+        except: ['.*Mock$'],
         clear: true,
+        flat: true,
     },
 
     gasReporter: {
