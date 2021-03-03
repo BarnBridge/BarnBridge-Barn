@@ -193,12 +193,62 @@ describe('Rewards standalone pool', function () {
 
             const balance = await rewards.balances(userAddress, syPool1.address);
             expect(balance.jTokenAmount).to.equal(amount);
-            expect(balance.equivalentUnderlyingAmount).to.equal(amount);
+            expect(balance.effectiveAmount).to.equal(amount);
 
             expect(await syPool1.balanceOf(userAddress)).to.equal(0);
             expect(await syPool1.balanceOf(rewards.address)).to.equal(amount);
         });
 
+        it('uses the price from SmartYield to calculate the underlying amount', async () => {
+            await syPool1.mint(userAddress, amount);
+            await syPool1.connect(user).approve(rewards.address, amount);
+            await syPool1.setPrice(tenPow18.mul(2));
+
+            await rewards.connect(user).deposit(syPool1.address, amount);
+            const balance = await rewards.balances(userAddress, syPool1.address);
+            expect(balance.jTokenAmount).to.equal(amount);
+            expect(balance.effectiveAmount).to.equal(amount.mul(2));
+        });
+
+        it('updates user total balance', async () => {
+            await syPool1.mint(userAddress, amount);
+            await syPool1.connect(user).approve(rewards.address, amount);
+            await syPool1.setPrice(tenPow18.mul(2));
+            await rewards.connect(user).deposit(syPool1.address, amount);
+
+            expect(await rewards.userEffectiveBalance(userAddress)).to.equal(amount.mul(2));
+        });
+
+        it('updates pool effective size', async () => {
+            await syPool1.mint(userAddress, amount);
+            await syPool1.connect(user).approve(rewards.address, amount);
+            await syPool1.setPrice(tenPow18.mul(2));
+            await rewards.connect(user).deposit(syPool1.address, amount);
+
+            expect(await rewards.poolEffectiveSize()).to.equal(amount.mul(2));
+        });
+
+        it('works with tokens with different decimals', async () => {
+            await rewards.connect(dao).addParticipatingToken(syPool2.address, 18);
+            await syPool1.mint(userAddress, amount);
+            await syPool1.connect(user).approve(rewards.address, amount);
+            await syPool1.setPrice(tenPow18.mul(2));
+
+            const amountDec6 = BigNumber.from(100).mul(BigNumber.from(10).pow(BigNumber.from(6)));
+            await syPool2.mint(userAddress, amountDec6);
+            await syPool2.connect(user).approve(rewards.address, amountDec6);
+            await syPool2.setPrice(tenPow18.mul(3));
+
+            await expect(rewards.connect(user).deposit(syPool1.address, amount)).to.not.be.reverted;
+            await expect(rewards.connect(user).deposit(syPool2.address, amountDec6)).to.not.be.reverted;
+
+            expect(await syPool1.balanceOf(userAddress)).to.equal(0);
+            expect(await syPool2.balanceOf(userAddress)).to.equal(0);
+
+            // (2 * 100 from p1 + 3 * 100 from p2) * 10**18
+            expect(await rewards.userEffectiveBalance(userAddress)).to.equal(tenPow18.mul(500));
+            expect(await rewards.poolEffectiveSize()).to.equal(tenPow18.mul(500));
+        });
 
     });
 

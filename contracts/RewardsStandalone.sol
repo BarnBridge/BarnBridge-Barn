@@ -19,14 +19,18 @@ contract RewardsStandalone is Ownable {
 
     struct UserBalance {
         uint256 jTokenAmount;
-        uint256 equivalentUnderlyingAmount;
+
+        // the effective amount is calculated as jtokenAmount * jtoken price
+        // and scaled from underlying decimals to 18 decimals
+        // it is used to accommodate SmartYield pools with different decimals
+        uint256 effectiveAmount;
     }
 
     // user -> token -> UserBalance
     mapping(address => mapping(address => UserBalance)) public balances;
 
-    mapping(address => uint256) public userTotalUnderlyingBalance;
-    uint256 public totalUnderlyingAmount;
+    mapping(address => uint256) public userEffectiveBalance;
+    uint256 public poolEffectiveSize;
 
 
     struct ParticipatingToken {
@@ -101,8 +105,13 @@ contract RewardsStandalone is Ownable {
         uint256 jTokenPrice = ISmartYield(token).price();
 
         UserBalance storage currentBalance = balances[msg.sender][token];
+        uint256 prevEffectiveBalance = currentBalance.effectiveAmount;
+
         currentBalance.jTokenAmount = currentBalance.jTokenAmount.add(amount);
-        currentBalance.equivalentUnderlyingAmount = currentBalance.jTokenAmount.mul(jTokenPrice).div(10**participatingTokens[token].priceDecimals);
+        currentBalance.effectiveAmount = currentBalance.jTokenAmount.mul(jTokenPrice).div(10**participatingTokens[token].priceDecimals).mul(10**(18-participatingTokens[token].underlyingDecimals));
+
+        userEffectiveBalance[msg.sender] = userEffectiveBalance[msg.sender].sub(prevEffectiveBalance).add(currentBalance.effectiveAmount);
+        poolEffectiveSize = poolEffectiveSize.sub(prevEffectiveBalance).add(currentBalance.effectiveAmount);
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -141,12 +150,12 @@ contract RewardsStandalone is Ownable {
 
         // if there's no bond staked, it doesn't make sense to ackFunds because there's nobody to distribute them to
         // and the calculation would fail anyways due to division by 0
-        if (totalUnderlyingAmount == 0) {
+        if (poolEffectiveSize == 0) {
             return;
         }
 
         uint256 diff = balanceNow.sub(balanceBefore);
-        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(totalUnderlyingAmount));
+        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(poolEffectiveSize));
 
         balanceBefore = balanceNow;
         currentMultiplier = multiplier;
@@ -235,6 +244,6 @@ contract RewardsStandalone is Ownable {
     function _userPendingReward(address user) internal view returns (uint256) {
         uint256 multiplier = currentMultiplier.sub(userMultiplier[user]);
 
-        return userTotalUnderlyingBalance[user].mul(multiplier).div(decimals);
+        return userEffectiveBalance[user].mul(multiplier).div(decimals);
     }
 }
