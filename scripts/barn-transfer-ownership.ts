@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 
-const _gov = '0xC9aaC94a462816608D0e8F6d0Dd9D6474A19109f'; // todo: change address
-const _barn = '0x36afDAc28ec7b41065E88FF914d72AbE23702251'; // todo: change address
+const _gov = '0x6b7e960b376428F11c6268aDf701d88966872cE0'; // todo: change address
+const _barn = '0xfA055241F5bcb1f3708872FB3E5e0Afd8a321f19'; // todo: change address
 
 async function main () {
     const barnOwnership=  await ethers.getContractAt('OwnershipFacet', _barn);
