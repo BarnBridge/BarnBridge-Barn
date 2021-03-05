@@ -4,11 +4,11 @@ import { BarnFacet, Rewards } from '../typechain';
 import { BigNumber } from 'ethers';
 import * as helpers from '../test/helpers/helpers';
 
-const _owner = '0xbbbbbbf2e986C085bF79d44BaCFA791C92b71fe8';
-const _bond = '0x521EE0CeDbed2a5A130B9218551fe492C5c402e4';
+const _owner = '0x89d652C64d7CeE18F5DF53B24d9D29D130b18798';
+const _bond = '0x0391D2021f89DC339F60Fff84546EA23E337750f';
 
 // needed for rewards setup
-const _cv = '0xB56ccaD94c714c3Ad1807EB3f5d651C7633BB252';
+const _cv = '0xA3C299eEE1998F45c20010276684921EBE6423D9';
 const startTs = 1612742400;
 const endTs = 1642982400;
 const rewardsAmount = BigNumber.from(610000).mul(helpers.tenPow18);
