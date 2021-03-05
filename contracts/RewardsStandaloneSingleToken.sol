@@ -11,35 +11,11 @@ import "./interfaces/IBarn.sol";
 import "./interfaces/ISmartYield.sol";
 import "hardhat/console.sol";
 
-contract RewardsStandalone is Ownable {
+contract RewardsStandaloneSingleToken is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 constant decimals = 10 ** 18;
-
-    struct UserBalance {
-        uint256 jTokenAmount;
-
-        // the effective amount is calculated as jtokenAmount * jtoken price
-        // and scaled from underlying decimals to 18 decimals
-        // it is used to accommodate SmartYield pools with different decimals
-        uint256 effectiveAmount;
-    }
-
-    // user -> token -> UserBalance
-    mapping(address => mapping(address => UserBalance)) public balances;
-
-    mapping(address => uint256) public userEffectiveBalance;
-    uint256 public poolEffectiveSize;
-
-    struct ParticipatingToken {
-        address addr;
-        uint8 priceDecimals;
-        uint8 underlyingDecimals;
-    }
-
-    // list of tokens participating into the pool. Must implement ISmartYield interface.
-    mapping(address => ParticipatingToken) public participatingTokens;
 
     struct Pull {
         address source;
@@ -60,87 +36,55 @@ contract RewardsStandalone is Ownable {
     mapping(address => uint256) public owed;
 
     IERC20 public rewardToken;
+    IERC20 public poolToken;
+
+    mapping(address => uint256) public balances;
+    uint256 public poolSize;
 
     event Claim(address indexed user, uint256 amount);
-    event Deposit(address indexed user, address indexed token, uint256 amount, uint256 balanceAfter);
-    event Withdraw(address indexed user, address indexed token, uint256 amount, uint256 balanceAfter);
+    event Deposit(address indexed user, uint256 amount, uint256 balanceAfter);
+    event Withdraw(address indexed user, uint256 amount, uint256 balanceAfter);
 
-    constructor(address _owner, address _token) {
-        require(_token != address(0), "reward token must not be 0x0");
+    constructor(address _owner, address _rewardToken, address _poolToken) {
+        require(_rewardToken != address(0), "reward token must not be 0x0");
 
         transferOwnership(_owner);
 
-        rewardToken = IERC20(_token);
+        rewardToken = IERC20(_rewardToken);
+        poolToken = IERC20(_poolToken);
     }
 
-    // addToken allows the owner to add new participating tokens to the pool
-    // it attempts to fetch the token decimals automatically which would result in a revert if the tokenAddress
-    // does not implement the decimals function
-    // only tokens with up to 18 decimals are allowed
-    function addParticipatingToken(address tokenAddress, uint8 priceDecimals) public {
-        require(msg.sender == owner(), "only callable by owner");
-        require(tokenAddress != address(0), "token cannot be 0x0");
-        require(priceDecimals > 0, "price decimals must be greater than 0");
-
-        uint8 underlyingDecimals = ERC20(tokenAddress).decimals();
-
-        require(underlyingDecimals > 0, "underlying decimals must be greater than 0");
-        require(underlyingDecimals <= 18, "underlying decimals must be <= 18");
-
-        participatingTokens[tokenAddress] = ParticipatingToken(tokenAddress, priceDecimals, underlyingDecimals);
-    }
-
-    function deposit(address tokenAddr, uint256 amount) public {
-        require(isParticipatingToken(tokenAddr), "unsupported token");
+    function deposit(uint256 amount) public {
         require(amount > 0, "amount must be greater than 0");
 
         require(
-            IERC20(tokenAddr).allowance(msg.sender, address(this)) >= amount,
+            poolToken.allowance(msg.sender, address(this)) >= amount,
             "allowance must be greater than 0"
         );
 
         _calculateOwed(msg.sender);
 
-        uint256 jTokenPrice = ISmartYield(tokenAddr).price();
+        balances[msg.sender] = balances[msg.sender].add(amount);
+        poolSize = poolSize.add(amount);
 
-        UserBalance storage currentBalance = balances[msg.sender][tokenAddr];
-        uint256 prevEffectiveBalance = currentBalance.effectiveAmount;
-        ParticipatingToken memory token = participatingTokens[tokenAddr];
+        poolToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        currentBalance.jTokenAmount = currentBalance.jTokenAmount.add(amount);
-        currentBalance.effectiveAmount = currentBalance.jTokenAmount.mul(jTokenPrice).div(10 ** token.priceDecimals).mul(10 ** (18 - token.underlyingDecimals));
-
-        userEffectiveBalance[msg.sender] = userEffectiveBalance[msg.sender].sub(prevEffectiveBalance).add(currentBalance.effectiveAmount);
-        poolEffectiveSize = poolEffectiveSize.sub(prevEffectiveBalance).add(currentBalance.effectiveAmount);
-
-        IERC20(tokenAddr).safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Deposit(msg.sender, tokenAddr, amount, currentBalance.jTokenAmount);
+        emit Deposit(msg.sender, amount, balances[msg.sender]);
     }
 
-    function withdraw(address tokenAddr, uint256 amount) public {
+    function withdraw(uint256 amount) public {
         require(amount > 0, "amount must be greater than 0");
-
-        UserBalance storage currentBalance = balances[msg.sender][tokenAddr];
-
-        require(currentBalance.jTokenAmount >= amount, "insufficient balance");
+        require(balances[msg.sender] >= amount, "insufficient balance");
 
         // update the amount owed to the user before doing any change on his balance
         _calculateOwed(msg.sender);
 
-        uint256 prevEffectiveBalance = currentBalance.effectiveAmount;
-        ParticipatingToken memory token = participatingTokens[tokenAddr];
-        uint256 jTokenPrice = ISmartYield(tokenAddr).price();
+        balances[msg.sender] = balances[msg.sender].sub(amount);
+        poolSize = poolSize.sub(amount);
 
-        currentBalance.jTokenAmount = currentBalance.jTokenAmount.sub(amount);
-        currentBalance.effectiveAmount = currentBalance.jTokenAmount.mul(jTokenPrice).div(10 ** token.priceDecimals).mul(10 ** (18 - token.underlyingDecimals));
+        poolToken.safeTransfer(msg.sender, amount);
 
-        userEffectiveBalance[msg.sender] = userEffectiveBalance[msg.sender].sub(prevEffectiveBalance).add(currentBalance.effectiveAmount);
-        poolEffectiveSize = poolEffectiveSize.sub(prevEffectiveBalance).add(currentBalance.effectiveAmount);
-
-        IERC20(tokenAddr).safeTransfer(msg.sender, amount);
-
-        emit Withdraw(msg.sender, tokenAddr, amount, currentBalance.jTokenAmount);
+        emit Withdraw(msg.sender, amount, balances[msg.sender]);
     }
 
     // claim calculates the currently owed reward and transfers the funds to the user
@@ -175,12 +119,12 @@ contract RewardsStandalone is Ownable {
 
         // if there's no bond staked, it doesn't make sense to ackFunds because there's nobody to distribute them to
         // and the calculation would fail anyways due to division by 0
-        if (poolEffectiveSize == 0) {
+        if (poolSize == 0) {
             return;
         }
 
         uint256 diff = balanceNow.sub(balanceBefore);
-        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(poolEffectiveSize));
+        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(poolSize));
 
         balanceBefore = balanceNow;
         currentMultiplier = multiplier;
@@ -217,10 +161,6 @@ contract RewardsStandalone is Ownable {
         if (lastPullTs < startTs) {
             lastPullTs = startTs;
         }
-    }
-
-    function isParticipatingToken(address token) public view returns (bool) {
-        return participatingTokens[token].addr != address(0);
     }
 
     // _pullToken calculates the amount based on the time passed since the last pull relative
@@ -269,6 +209,6 @@ contract RewardsStandalone is Ownable {
     function _userPendingReward(address user) internal view returns (uint256) {
         uint256 multiplier = currentMultiplier.sub(userMultiplier[user]);
 
-        return userEffectiveBalance[user].mul(multiplier).div(decimals);
+        return balances[user].mul(multiplier).div(decimals);
     }
 }

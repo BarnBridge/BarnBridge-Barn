@@ -3,15 +3,15 @@ import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
 import { tenPow18, zeroAddress } from './helpers/helpers';
 import { expect } from 'chai';
-import { Erc20Mock, RewardsStandalone, SmartYieldMock } from '../typechain';
+import { Erc20Mock, RewardsStandaloneSingleToken, SmartYieldMock } from '../typechain';
 import * as deploy from './helpers/deploy';
 import * as time from './helpers/time';
 
-describe('Rewards standalone pool', function () {
+describe('Rewards standalone pool single token', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let bond: Erc20Mock, rewards: RewardsStandalone;
-    let syPool1: SmartYieldMock, syPool2: SmartYieldMock;
+    let bond: Erc20Mock, rewards: RewardsStandaloneSingleToken;
+    let syPool1: SmartYieldMock;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -26,17 +26,14 @@ describe('Rewards standalone pool', function () {
     before(async function () {
         bond = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
         syPool1 = (await deploy.deployContract('SmartYieldMock', [18])) as SmartYieldMock;
-        syPool2 = (await deploy.deployContract('SmartYieldMock', [6])) as SmartYieldMock;
 
         await setupSigners();
         await setupContracts();
 
         rewards = (await deploy.deployContract(
-            'RewardsStandalone',
-            [await dao.getAddress(), bond.address])
-        ) as RewardsStandalone;
-
-        await rewards.connect(dao).addParticipatingToken(syPool1.address, 18);
+            'RewardsStandaloneSingleToken',
+            [await dao.getAddress(), bond.address, syPool1.address])
+        ) as RewardsStandaloneSingleToken;
     });
 
     beforeEach(async function () {
@@ -125,107 +122,36 @@ describe('Rewards standalone pool', function () {
         });
     });
 
-    describe('addParticipatingToken', function () {
-        it('reverts if not called by owner', async function () {
-            await expect(rewards.connect(user).addParticipatingToken(syPool2.address, 18))
-                .to.be.revertedWith('only callable by owner');
-        });
-
-        it('reverts for incorrect data', async function () {
-            await expect(rewards.connect(dao).addParticipatingToken(zeroAddress, 18))
-                .to.be.revertedWith('token cannot be 0x0');
-
-            await expect(rewards.connect(dao).addParticipatingToken(syPool2.address, 0))
-                .to.be.revertedWith('price decimals must be greater than 0');
-
-            // rewards does not have the decimals function
-            await expect(rewards.connect(dao).addParticipatingToken(rewards.address, 18))
-                .to.be.reverted;
-
-            const badPool = (await deploy.deployContract('SmartYieldMock', [0])) as SmartYieldMock;
-            await expect(rewards.connect(dao).addParticipatingToken(badPool.address, 18))
-                .to.be.revertedWith('underlying decimals must be greater than 0');
-
-            const badPool2 = (await deploy.deployContract('SmartYieldMock', [30])) as SmartYieldMock;
-            await expect(rewards.connect(dao).addParticipatingToken(badPool2.address, 18))
-                .to.be.revertedWith('underlying decimals must be <= 18');
-        });
-
-        it('adds token to list when data is correct', async function () {
-            await expect(rewards.connect(dao).addParticipatingToken(syPool2.address, 18))
-                .to.not.be.reverted;
-
-            expect(await rewards.isParticipatingToken(syPool2.address)).to.be.true;
-
-            const token = await rewards.participatingTokens(syPool2.address);
-
-            expect(token.addr).to.equal(syPool2.address);
-            expect(token.priceDecimals).to.equal(18);
-            expect(token.underlyingDecimals).to.equal(6);
-        });
-    });
-
     describe('deposit', function () {
-        it('reverts if user tries to deposit non-participating tokens', async function () {
-            const badToken = (await deploy.deployContract('SmartYieldMock', [18])) as SmartYieldMock;
-            await badToken.mint(userAddress, amount);
-
-            await expect(rewards.connect(user).deposit(badToken.address, amount))
-                .to.be.revertedWith('unsupported token');
-        });
-
         it('reverts if amount is 0', async function () {
-            await expect(rewards.connect(user).deposit(syPool1.address, 0))
+            await expect(rewards.connect(user).deposit(0))
                 .to.be.revertedWith('amount must be greater than 0');
         });
 
         it('reverts if user did not approve token', async function () {
-            await expect(rewards.connect(user).deposit(syPool1.address, amount))
+            await expect(rewards.connect(user).deposit(amount))
                 .to.be.revertedWith('allowance must be greater than 0');
         });
 
         it('updates the user balance and transfers amount to itself', async function () {
             await syPool1.mint(userAddress, amount);
             await syPool1.connect(user).approve(rewards.address, amount);
-            await syPool1.setPrice(tenPow18);
 
-            await expect(rewards.connect(user).deposit(syPool1.address, amount)).to.not.be.reverted;
+            await expect(rewards.connect(user).deposit(amount)).to.not.be.reverted;
 
-            const balance = await rewards.balances(userAddress, syPool1.address);
-            expect(balance.jTokenAmount).to.equal(amount);
-            expect(balance.effectiveAmount).to.equal(amount);
+            const balance = await rewards.balances(userAddress);
+            expect(balance).to.equal(amount);
 
             expect(await syPool1.balanceOf(userAddress)).to.equal(0);
             expect(await syPool1.balanceOf(rewards.address)).to.equal(amount);
         });
 
-        it('uses the price from SmartYield to calculate the underlying amount', async function () {
-            await syPool1.mint(userAddress, amount);
-            await syPool1.connect(user).approve(rewards.address, amount);
-            await syPool1.setPrice(tenPow18.mul(2));
-
-            await rewards.connect(user).deposit(syPool1.address, amount);
-            const balance = await rewards.balances(userAddress, syPool1.address);
-            expect(balance.jTokenAmount).to.equal(amount);
-            expect(balance.effectiveAmount).to.equal(amount.mul(2));
-        });
-
-        it('updates user total balance', async function () {
-            await syPool1.mint(userAddress, amount);
-            await syPool1.connect(user).approve(rewards.address, amount);
-            await syPool1.setPrice(tenPow18.mul(2));
-            await rewards.connect(user).deposit(syPool1.address, amount);
-
-            expect(await rewards.userEffectiveBalance(userAddress)).to.equal(amount.mul(2));
-        });
-
         it('updates pool effective size', async function () {
             await syPool1.mint(userAddress, amount);
             await syPool1.connect(user).approve(rewards.address, amount);
-            await syPool1.setPrice(tenPow18.mul(2));
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
-            expect(await rewards.poolEffectiveSize()).to.equal(amount.mul(2));
+            expect(await rewards.poolSize()).to.equal(amount);
         });
 
         it('emits Deposit event', async function () {
@@ -233,43 +159,20 @@ describe('Rewards standalone pool', function () {
             await syPool1.connect(user).approve(rewards.address, amount);
             await syPool1.setPrice(tenPow18.mul(2));
 
-            await expect(rewards.connect(user).deposit(syPool1.address, amount))
+            await expect(rewards.connect(user).deposit(amount))
                 .to.emit(rewards, 'Deposit')
-                .withArgs(userAddress, syPool1.address, amount, amount);
-        });
-
-        it('works with tokens with different decimals', async function () {
-            await rewards.connect(dao).addParticipatingToken(syPool2.address, 18);
-            await syPool1.mint(userAddress, amount);
-            await syPool1.connect(user).approve(rewards.address, amount);
-            await syPool1.setPrice(tenPow18.mul(2));
-
-            const amountDec6 = BigNumber.from(100).mul(BigNumber.from(10).pow(BigNumber.from(6)));
-            await syPool2.mint(userAddress, amountDec6);
-            await syPool2.connect(user).approve(rewards.address, amountDec6);
-            await syPool2.setPrice(tenPow18.mul(3));
-
-            await expect(rewards.connect(user).deposit(syPool1.address, amount)).to.not.be.reverted;
-            await expect(rewards.connect(user).deposit(syPool2.address, amountDec6)).to.not.be.reverted;
-
-            expect(await syPool1.balanceOf(userAddress)).to.equal(0);
-            expect(await syPool2.balanceOf(userAddress)).to.equal(0);
-
-            // (2 * 100 from p1 + 3 * 100 from p2) * 10**18
-            expect(await rewards.userEffectiveBalance(userAddress)).to.equal(tenPow18.mul(500));
-            expect(await rewards.poolEffectiveSize()).to.equal(tenPow18.mul(500));
+                .withArgs(userAddress, amount, amount);
         });
 
         it('updates the reward owed to user and multiplier', async function () {
             await syPool1.mint(userAddress, amount.mul(2));
-            await syPool1.setPrice(tenPow18);
             await syPool1.connect(user).approve(rewards.address, amount.mul(2));
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             // add some reward to be distributed
             await bond.mint(rewards.address, amount);
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             expect(await rewards.owed(userAddress)).to.equal(amount);
 
@@ -281,9 +184,8 @@ describe('Rewards standalone pool', function () {
 
         it('does not pull bond if function is disabled', async function () {
             await syPool1.mint(userAddress, amount.mul(3));
-            await syPool1.setPrice(tenPow18);
             await syPool1.connect(user).approve(rewards.address, amount.mul(3));
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(0);
 
@@ -293,11 +195,11 @@ describe('Rewards standalone pool', function () {
             const endsAt = startAt + 60 * 60 * 24 * 7;
             await rewards.connect(dao).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             await helpers.moveAtTimestamp(startAt + time.day);
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             // total time is 7 days & total amount is 100  => 1 day worth of rewards ~14.28
             const balance = await bond.balanceOf(rewards.address);
@@ -307,32 +209,30 @@ describe('Rewards standalone pool', function () {
 
         it('does not pull bond if already pulled everything', async function () {
             await syPool1.mint(userAddress, amount.mul(3));
-            await syPool1.setPrice(tenPow18);
             await syPool1.connect(user).approve(rewards.address, amount.mul(3));
 
             const { start, end } = await setupRewards();
 
             await helpers.moveAtTimestamp(end + 1 * time.day);
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(amount);
 
             await helpers.moveAtTimestamp(end + 2 * time.day);
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(amount);
         });
 
         it('updates the amount owed to user but does not send funds', async function () {
             await syPool1.mint(happyPirateAddress, amount.mul(3));
-            await syPool1.setPrice(tenPow18);
             await syPool1.connect(happyPirate).approve(rewards.address, amount.mul(3));
 
             await bond.connect(communityVault).approve(rewards.address, amount);
 
-            await rewards.connect(happyPirate).deposit(syPool1.address, amount);
+            await rewards.connect(happyPirate).deposit(amount);
 
             await helpers.moveAtTimestamp(defaultStartAt + time.day);
 
@@ -346,61 +246,50 @@ describe('Rewards standalone pool', function () {
 
     describe('withdraw', function () {
         it('reverts if amount is 0', async function () {
-            await expect(rewards.connect(user).withdraw(syPool1.address, 0))
+            await expect(rewards.connect(user).withdraw(0))
                 .to.be.revertedWith('amount must be greater than 0');
         });
 
         it('reverts if user does not have balance', async function () {
-            await expect(rewards.connect(user).withdraw(syPool1.address, amount))
+            await expect(rewards.connect(user).withdraw(amount))
                 .to.be.revertedWith('insufficient balance');
         });
 
         it('reverts if user does not have enough balance', async function () {
             await setupUserForWithdraw(syPool1, user, amount, tenPow18);
 
-            await expect(rewards.connect(user).withdraw(syPool1.address, amount.mul(2)))
+            await expect(rewards.connect(user).withdraw(amount.mul(2)))
                 .to.be.revertedWith('insufficient balance');
         });
 
         it('updates user balance', async function () {
             await setupUserForWithdraw(syPool1, user, amount, tenPow18);
 
-            await expect(rewards.connect(user).withdraw(syPool1.address, amount))
+            await expect(rewards.connect(user).withdraw(amount))
                 .to.not.be.reverted;
 
-            const balance = await rewards.balances(userAddress, syPool1.address);
-            expect(balance.jTokenAmount).to.equal(0);
-            expect(balance.effectiveAmount).to.equal(0);
+            const balance = await rewards.balances(userAddress);
+            expect(balance).to.equal(0);
 
             expect(await syPool1.balanceOf(userAddress)).to.equal(amount);
             expect(await syPool1.balanceOf(rewards.address)).to.equal(0);
         });
 
-        it('updates the user total balance', async function () {
-            await setupUserForWithdraw(syPool1, user, amount, tenPow18);
-
-            await expect(rewards.connect(user).withdraw(syPool1.address, amount))
-                .to.not.be.reverted;
-
-            const totalBalance = await rewards.userEffectiveBalance(userAddress);
-            expect(totalBalance).to.equal(0);
-        });
-
         it('updates the pool size', async function () {
             await setupUserForWithdraw(syPool1, user, amount, tenPow18);
 
-            await expect(rewards.connect(user).withdraw(syPool1.address, amount))
+            await expect(rewards.connect(user).withdraw(amount))
                 .to.not.be.reverted;
 
-            expect(await rewards.poolEffectiveSize()).to.equal(0);
+            expect(await rewards.poolSize()).to.equal(0);
         });
 
         it('emits Withdraw event', async function () {
             await setupUserForWithdraw(syPool1, user, amount, tenPow18);
 
-            await expect(rewards.connect(user).withdraw(syPool1.address, amount))
+            await expect(rewards.connect(user).withdraw(amount))
                 .to.emit(rewards, 'Withdraw')
-                .withArgs(userAddress, syPool1.address, amount, 0);
+                .withArgs(userAddress, amount, 0);
         });
     });
 
@@ -413,7 +302,7 @@ describe('Rewards standalone pool', function () {
             expect(await rewards.currentMultiplier()).to.equal(0);
 
             await bond.mint(rewards.address, amount);
-            await rewards.connect(happyPirate).deposit(syPool1.address, amount);
+            await rewards.connect(happyPirate).deposit(amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
 
@@ -433,7 +322,7 @@ describe('Rewards standalone pool', function () {
             await syPool1.connect(happyPirate).approve(rewards.address, amount.mul(2));
 
             await bond.mint(rewards.address, amount);
-            await rewards.connect(happyPirate).deposit(syPool1.address, amount);
+            await rewards.connect(happyPirate).deposit(amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
@@ -465,7 +354,7 @@ describe('Rewards standalone pool', function () {
 
             const { start, end } = await setupRewards();
 
-            await rewards.connect(happyPirate).deposit(syPool1.address, amount);
+            await rewards.connect(happyPirate).deposit(amount);
 
             const depositTs = await helpers.getLatestBlockTimestamp();
 
@@ -495,20 +384,20 @@ describe('Rewards standalone pool', function () {
 
             const { start, end } = await setupRewards();
 
-            await rewards.connect(happyPirate).deposit(syPool1.address, amount);
+            await rewards.connect(happyPirate).deposit(amount);
 
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
-            await rewards.connect(flyingParrot).deposit(syPool1.address, amount);
+            await rewards.connect(flyingParrot).deposit(amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
@@ -535,21 +424,21 @@ describe('Rewards standalone pool', function () {
 
             const { start, end } = await setupRewards();
 
-            await rewards.connect(happyPirate).deposit(syPool1.address, amount);
+            await rewards.connect(happyPirate).deposit(amount);
 
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
-            await rewards.connect(flyingParrot).deposit(syPool1.address, amount);
+            await rewards.connect(flyingParrot).deposit(amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const multiplierAtDeposit2 = await rewards.currentMultiplier();
             const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
-            await rewards.connect(user).deposit(syPool1.address, amount);
+            await rewards.connect(user).deposit(amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
@@ -600,9 +489,8 @@ describe('Rewards standalone pool', function () {
 
     async function setupUserForWithdraw (syPool1: SmartYieldMock, user: Signer, amount: BigNumber, price: BigNumber) {
         await syPool1.mint(await user.getAddress(), amount);
-        await syPool1.setPrice(price);
         await syPool1.connect(user).approve(rewards.address, amount);
-        await rewards.connect(user).deposit(syPool1.address, amount);
+        await rewards.connect(user).deposit(amount);
     }
 
     async function setupRewards (): Promise<{ start: number, end: number }> {
