@@ -67,3 +67,7 @@ where:
 - userBalance = barn.balanceOf(user) -- the amount of $BOND staked into the Barn
 ```
 3. update the oldUserMultiplier with the current multiplier -- signaling that we already calculated how much was owed to the user since his last action
+
+## Audits
+- [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/Quantstamp-DAO.pdf)
+- [Haechi](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/HAECHI-DAO.pdf)
