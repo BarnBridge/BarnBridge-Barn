@@ -1,5 +1,8 @@
 ## BOND staking / locking + Rewards
 
+## Smart Contract Architecture
+![dao sc architecture](https://gblobscdn.gitbook.com/assets%2F-MIu3rMElIO-jG68zdaV%2F-MXHutr14sDo0hYi6gg3%2F-MXHwLegBZM5HWoEzudF%2Fdao.png?alt=media&token=51e3e2c7-4aab-4601-a3f1-46ae9e1b966f)
+
 ## Architecture
 - Diamond Standard for upgradeability
     - started from the reference implementation [here](https://github.com/mudgen/diamond-1) which was refactored
