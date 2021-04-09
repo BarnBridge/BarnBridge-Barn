@@ -92,6 +92,19 @@ yarn test
 yarn run coverage
 ```
 
+## Deployed contracts
+### Mainnet
+```shell
+DiamondCutFacet deployed to: 0x767f7d9E655161C9E6D8a3Dbb565666FCAa2BDf4
+DiamondLoupeFacet deployed to: 0x04499B879F6A7E75802cd09354eF2B788BF4Cf26
+OwnershipFacet deployed to: 0xeB8E3e48F770C5c13D9De2203Fc307B6D04381FF
+ChangeRewardsFacet deployed to: 0xb93E511D913A17826D2Df5AC8BE122C0EBd1A26d
+BarnFacet deployed at: 0xA62dA56e9a330646386365dC6B2945b5C4d120ed
+-----
+Barn deployed at: 0x10e138877df69Ca44Fdc68655f86c88CDe142D7F
+Rewards deployed at: 0x9d0CF50547D848cC4b6A12BeDCF7696e9b334a22
+```
+
 ## Audits
 - [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/Quantstamp-DAO.pdf)
 - [Haechi](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/HAECHI-DAO.pdf)
