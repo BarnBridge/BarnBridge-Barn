@@ -76,7 +76,7 @@ where:
 
 ### 1. Clone this repo
 ```shell
-git clone git@github.com:BarnBridge/BarnBridge-DAO.git
+git clone git@github.com:BarnBridge/BarnBridge-Barn.git
 ```
 
 ### 2. Install dependencies
