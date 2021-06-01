@@ -80,22 +80,26 @@ Check out more detailed smart contract Slither graphs with all the dependencies:
 
 ## Updating the .env file
 ### Create an API key with Infura to deploy to Ethereum Public Testnet. In this guide, we are using Kovan.
-
 1. Navigate to [Infura.io](https://infura.io/) and create an account
 2. Log in and select "Get started and create your first project to access the Ethereum network"
 3. Create a project and name it appropriately
 4. Then, copy the last part of the https URL (after "/v3/:) and paste it into the section named INFURA in the .env file
-6. Insert the address of your testing wallet in the .env section labeled "OWNER"
-5. Finally, insert the mnemonic phrase for your testing wallet into the .env file section named MNEMONIC. You can use ie a MetaMask instance, and switch the network to Kovan on the upper right. DO NOT USE YOUR PERSONAL METAMASK SEED PHRASE; USE A DIFFERENT BROWSER WITH AN INDEPENDENT METAMASK INSTALLATION
-6. You'll need some Kovan-ETH (it is free) in order to pay the gas costs of deploying the contracts on the TestNet; you can use your GitHub account to authenticate to the [KovanFaucet](https://faucet.kovan.network/) and receive 2 Kovan-ETH for free every 24 hours
+
+### Update .env with your wallet information
+5. Insert the address of your testing wallet in the .env section labeled "OWNER"
+6. Finally, insert the mnemonic phrase for your testing wallet into the .env file section named MNEMONIC. You can use ie a MetaMask instance, and switch the network to Kovan on the upper right. DO NOT USE YOUR PERSONAL METAMASK SEED PHRASE; USE A DIFFERENT BROWSER WITH AN INDEPENDENT METAMASK INSTALLATION
+7. You'll need some Kovan-ETH (it is free) in order to pay the gas costs of deploying the contracts on the TestNet; you can use your GitHub account to authenticate to the [KovanFaucet](https://faucet.kovan.network/) and receive 2 Kovan-ETH for free every 24 hours
 
 ### Create an API key with Etherscan 
-1. Navigate to [EtherScan](https://etherscan.io/) and create an account 
-2. Log in and navigate to [MyAPIKey](https://etherscan.io/myapikey) 
-3. Use the Add button to create an API key, and paste it into the indicated section towards the section labeled ETHERSCAN in the .env file
+8. Navigate to [EtherScan](https://etherscan.io/) and create an account 
+9. Log in and navigate to [MyAPIKey](https://etherscan.io/myapikey) 
+10. Use the Add button to create an API key, and paste it into the indicated section towards the section labeled ETHERSCAN in the .env file
+
+### Update .env with the Community Vault contract address
+11. Prior to running this deployment, deploy [BarnBridge-YieldFarming](https://github.com/BarnBridge/BarnBridge-YieldFarming) and then copy the contract address of the CommunityVault contract created into the section labeled CV in the .env file
+
 
 ## Installing
-
 ### Install NodeJS dependencies which include HardHat
     npm install
     
