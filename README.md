@@ -1,27 +1,44 @@
-## BOND staking / locking + Rewards
+# BarnBridge Barn
+![](https://i.imgur.com/WhuS8Dv.png)
 
-## Smart Contract Architecture
-![dao sc architecture](https://gblobscdn.gitbook.com/assets%2F-MIu3rMElIO-jG68zdaV%2F-MXHutr14sDo0hYi6gg3%2F-MXHwLegBZM5HWoEzudF%2Fdao.png?alt=media&token=51e3e2c7-4aab-4601-a3f1-46ae9e1b966f)
+Implements continuous rewards for staking BOND in the DAO. Implements logic for determining DAO voting power based upon amount of BOND deposited (which becomes vBOND) plus a multiplier (up to 2x) awarded to those who lock their BOND in the DAO for a specified period (up to 1 year). Those that lock their vBOND for 1 year receive a 2x multiplier; those that lock their vBOND for 6 months receive a 1.5x multiplier, and so on. Also allows users to delegate their vBOND voting power to a secondary wallet address.
+**NOTE:** The vBOND multiplier ONLY affects voting power; it does NOT affect rewards. All users who stake BOND receive the same reward rate regardless of the amount of time they have locked or not locked. 
 
-## Architecture
-- Diamond Standard for upgradeability
-    - started from the reference implementation [here](https://github.com/mudgen/diamond-1) which was refactored
-    - the features presented below are implemented on a single facet in [BarnFacet.sol](./contracts/facets/BarnFacet.sol)
+Any questions? Please contact us on [Discord](https://discord.gg/FfEhsVk) or read our [Developer Guides](https://integrations.barnbridge.com/) for more information.
 
-- Diamond Storage for storage
-
-## BOND staking
-### Actions
+##  Contracts
+### Barn.sol
+Allows users to deposit BOND into the DAO, withdraw it, lock for a time period to increase their voting power (does not affect rewards), and delegate their vBOND voting power to a secondary wallet address. Interacts with [Rewards.sol](https://github.com/BarnBridge/BarnBridge-Barn/blob/master/contracts/Rewards.sol) contract to check balances and update upon deposit/withdraw. Interacts with [Governance.sol](https://github.com/BarnBridge/BarnBridge-DAO/blob/master/contracts/Governance.sol) contract to specify how much voting power (vBOND) a wallet address has for use in voting on or creating DAO proposals.
+#### Actions
 - deposit
 - withdraw
 - lock
 - delegate
 
-### Main Views
-- `balance` - current and snapshot = the actual amount a user staked (bonus not included)
-- `delegated power` - current and snapshot = how much power was delegated to a user by other users
-- `voting power` - current and snapshot = `balance * (1 + bonus) + delegated power`
-- `total $BOND staked` - current and snapshot
+### Rewards.sol
+Rewards users who stake their BOND on a continuous basis. Allows users to Claim their rewards which are then Transfered to their wallet. Interacts with the [CommunityVault.sol](https://github.com/BarnBridge/BarnBridge-YieldFarming/blob/master/contracts/CommunityVault.sol) which is the source of the BOND rewards. The `Barn` contract calls the `registerUserAction` hook on each `deposit`/`withdraw` the user executes, and sends the results to the `Rewards` contract.
+#### How it works
+1. every time the `acKFunds` function detects a balance change, the multiplier is recalculated by the following formula:
+```
+newMultiplier = oldMultiplier + amountAdded / totalBondStaked
+```
+2. whenever a user action is registered (either by automatic calls from the hook or by user action (claim)), we calculate the amount owed to the user by the following formula:
+```
+newOwed = currentlyOwed + userBalance * (currentMultiplier - oldUserMultiplier)
+
+where:
+- oldUserMultiplier is the multiplier at the time of last user action
+- userBalance = barn.balanceOf(user) -- the amount of $BOND staked into the Barn
+```
+3. update the oldUserMultiplier with the current multiplier -- signaling that we already calculated how much was owed to the user since his last action
+
+## Smart Contract Architecture
+Overview
+
+![dao sc architecture](https://gblobscdn.gitbook.com/assets%2F-MIu3rMElIO-jG68zdaV%2F-MXHutr14sDo0hYi6gg3%2F-MXHwLegBZM5HWoEzudF%2Fdao.png?alt=media&token=51e3e2c7-4aab-4601-a3f1-46ae9e1b966f)
+
+
+Check out more detailed smart contract Slither graphs with all the dependencies: [BarnBridge-Barn Slither Graphs](https://github.com/BarnBridge/sc-graphs/tree/main/BarnBridge-Barn).
 
 ### Specs
 - user can stake BOND for vBOND
@@ -49,48 +66,128 @@
     - delegated balance cannot be locked
     - user can take back the delegated vBONDs at any time
 
-## Rewards
-The rewards contract is meant as a continuation of the pool 3 from BarnBridge's YieldFarming program. It is used to incentivize participation in the DAO.
 
-The distribution mechanism is based on a continuous strategy (for example, if you staked for 5 minutes, you can claim a reward relative to those 5 minutes).
 
-The `Barn` contract calls the `registerUserAction` hook on each `deposit`/`withdraw` the user executes.
+## Initial Setup
+### Install NVM and the latest version of NodeJS 12.x
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash 
+    # Restart terminal and/or run commands given at the end of the installation script
+    nvm install 12
+    nvm use 12
+### Use Git to pull down the BarnBridge-SmartYieldBonds repository from GitHub
+    git clone https://github.com/BarnBridge/BarnBridge-Barn.git
+    cd BarnBridge-YieldFarming
+### Create config.ts using the sample template config.sample.ts
+    cp config.sample.ts config.ts
 
-### How it works
-1. every time the `acKFunds` function detects a balance change, the multiplier is recalculated by the following formula:
+## Updating the config.ts file
+### Create an API key with Infura to deploy to Ethereum Public Testnet. In this guide, we are using Kovan.
+
+1. Navigate to [Infura.io](https://infura.io/) and create an account
+2. Log in and select "Get started and create your first project to access the Ethereum network"
+3. Create a project and name it appropriately
+4. Then, switch the endpoint to Rinkeby, copy the https URL and paste it into the section named `rinkeby` 
+5. Finally, insert the mnemonic phrase for your testing wallet. You can use a MetaMask instance, and switch the network to Rinkeby on the upper right. DO NOT USE YOUR PERSONAL METAMASK SEED PHRASE; USE A DIFFERENT BROWSER WITH AN INDEPENDENT METAMASK INSTALLATION
+6. You'll need some Kovan-ETH (it is free) in order to pay the gas costs of deploying the contracts on the TestNet; you can use your GitHub account to authenticate to the [KovanFaucet](https://faucet.kovan.network/) and receive 2 Kovan-ETH for free every 24 hours
+
+### Create an API key with Etherscan 
+1. Navigate to [EtherScan](https://etherscan.io/) and create an account 
+2. Log in and navigate to [MyAPIKey](https://etherscan.io/myapikey) 
+3. Use the Add button to create an API key, and paste it into the indicated section towards the bottom of the `config.ts` file
+
+### Verify contents of config.ts; it should look like this:
+
+```js
+        import { NetworksUserConfig } from "hardhat/types";
+        import { EtherscanConfig } from "@nomiclabs/hardhat-etherscan/dist/src/types";
+
+        export const networks: NetworksUserConfig = {
+            // Needed for `solidity-coverage`
+            coverage: {
+                url: "http://localhost:8555"
+            },
+
+            // Kovan
+            kovan: {
+                url: "https://kovan.infura.io/v3/INFURA-API-KEY",
+                chainId: 42,
+                accounts: {
+                    mnemonic: "YourKovanTestWalletMnemonicPhrase",
+                    path: "m/44'/60'/0'/0",
+                    initialIndex: 0,
+                    count: 10
+                },
+                gas: 3716887,
+                gasPrice: 20000000000, // 20 gwei
+                gasMultiplier: 1.5
+            },
+
+            // Mainnet
+            mainnet: {
+                url: "https://mainnet.infura.io/v3/YOUR-INFURA-KEY",
+                chainId: 1,
+                accounts: ["0xaaaa"],
+                gas: "auto",
+                gasPrice: 50000000000,
+                gasMultiplier: 1.5
+            }
+        };
+
+        // Use to verify contracts on Etherscan
+        // https://buidler.dev/plugins/nomiclabs-buidler-etherscan.html
+        export const etherscan: EtherscanConfig = {
+            apiKey: "YourEtherscanAPIKey"
+        };
+
 ```
-newMultiplier = oldMultiplier + amountAdded / totalBondStaked
-```
-2. whenever a user action is registered (either by automatic calls from the hook or by user action (claim)), we calculate the amount owed to the user by the following formula:
-```
-newOwed = currentlyOwed + userBalance * (currentMultiplier - oldUserMultiplier)
+## Installing
 
-where:
-- oldUserMultiplier is the multiplier at the time of last user action
-- userBalance = barn.balanceOf(user) -- the amount of $BOND staked into the Barn
-```
-3. update the oldUserMultiplier with the current multiplier -- signaling that we already calculated how much was owed to the user since his last action
+### Install NodeJS dependencies which include HardHat
+    npm install
+    
+### Compile the contracts
+    npm run compile
+    
+## Running Tests
+    npm run test
 
-## Running tests
 **Note:** The result of tests is readily available [here](./test-results.md).
+## Running Code Coverage Tests
+    npm run coverage
 
-### 1. Clone this repo
-```shell
-git clone git@github.com:BarnBridge/BarnBridge-Barn.git
-```
+## Deploying to Kovan    
+### Use deploy-default-facets.ts to deploy the default Diamond Facets
 
-### 2. Install dependencies
-```shell
-yarn install
-```
+    npx hardhat run --network kovan deploy-default-facets.ts # outputs single token pool factory address
+    
+### Use deploy-upgrade-facet.ts to deploy the Change Rewards facet
 
-### 3. Run tests
-```shell
-yarn test
+    npx hardhat run --network kovan scripts/deploy-factory-multi.js
+    
+### Use kovan-deploy-barn.ts to deploy Barn.sol and Rewards.sol
+Update line 8 in the scripts/kovan-deploy-barn.ts file with the DiamondCutFacet address given by deploy-default-facets.ts
+Update line 9 in the scripts/kovan-deploy-barn.ts file with the DiamondLoupeFacet address given by deploy-default-facets.ts
+Update line 10 in the scripts/kovan-deploy-barn.ts file with the OwnershipFacet address given by deploy-default-facets.ts
+Update line 10 in the scripts/kovan-deploy-barn.ts file with the OwnershipFacet address given by deploy-default-facets.ts
+Update line 14 in the scripts/kovan-deploy-barn.ts file with your own Kovan test wallet address
+UPdate line 15 in the in the scripts/kovan-deploy-barn.ts file with the address given during your deployment of [Governance.sol](https://github.com/BarnBridge/BarnBridge-DAO/blob/master/contracts/Governance.sol)
+**NOTE:** in order to test distribution of rewards, your Kovan wallet must contain Kovan-BOND; contact the Integrations Team for distribution
 
-# or if you want to run with coverage
-yarn run coverage
-```
+    npx hardhat run --network kovan scripts/kovan-deploy-barn.ts
+    
+Note the output addresses of Barn and Rewards addresses
+
+ 
+### Optional: Transfer ownership of Barn to Governance
+Update line 3 in the scripts/barn-transfer-ownership.ts file with the address given during your deployment of [Governance.sol](https://github.com/BarnBridge/BarnBridge-DAO/blob/master/contracts/Governance.sol)
+Update line 4 in the scripts/barn-transfer-ownership.ts file the Barn address given by kovan-deploy-barn.ts
+
+    npx hardhat run --network kovan scripts/barn-transfer-ownership.ts
+
+
+## Audits
+- [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/Quantstamp-DAO.pdf)
+- [Haechi](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/HAECHI-DAO.pdf)
 
 ## Deployed contracts
 ### Mainnet
@@ -105,6 +202,8 @@ Barn deployed at: 0x10e138877df69Ca44Fdc68655f86c88CDe142D7F
 Rewards deployed at: 0x9d0CF50547D848cC4b6A12BeDCF7696e9b334a22
 ```
 
-## Audits
-- [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/Quantstamp-DAO.pdf)
-- [Haechi](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/HAECHI-DAO.pdf)
+## Discussion
+For any concerns with the platform, open an issue on GitHub or visit us on [Discord](https://discord.gg/9TTQNUzg) to discuss.
+For security concerns, please email info@barnbridge.com.
+
+Copyright 2021 BarnBridge DAO
