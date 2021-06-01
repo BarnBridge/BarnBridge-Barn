@@ -8,9 +8,6 @@ artifacts
 coverage
 coverage.json
 
-# Local settings
-config.ts
-
 # IDE settings
 .idea/
 typechain/
