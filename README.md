@@ -79,11 +79,11 @@ Check out more detailed smart contract Slither graphs with all the dependencies:
     cd BarnBridge-YieldFarming
 
 ## Updating the .env file
-### Create an API key with Infura to deploy to Ethereum Public Testnet. In this guide, we are using Kovan.
+### Create an API key with a Provider such as Infura to deploy to Ethereum Public Testnet. In this guide, we are using Kovan.
 1. Navigate to [Infura.io](https://infura.io/) and create an account
 2. Log in and select "Get started and create your first project to access the Ethereum network"
 3. Create a project and name it appropriately
-4. Then, copy the last part of the https URL (after "/v3/:) and paste it into the section named INFURA in the .env file
+4. Then, copy the URL and paste it into the section named PROVIDER in the .env file
 
 ### Update .env with your wallet information
 5. Insert the address of your testing wallet in the .env section labeled "OWNER"
