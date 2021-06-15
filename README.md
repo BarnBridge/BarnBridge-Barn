@@ -77,71 +77,29 @@ Check out more detailed smart contract Slither graphs with all the dependencies:
 ### Use Git to pull down the BarnBridge-SmartYieldBonds repository from GitHub
     git clone https://github.com/BarnBridge/BarnBridge-Barn.git
     cd BarnBridge-YieldFarming
-### Create config.ts using the sample template config.sample.ts
-    cp config.sample.ts config.ts
 
-## Updating the config.ts file
-### Create an API key with Infura to deploy to Ethereum Public Testnet. In this guide, we are using Kovan.
-
+## Updating the .env file
+### Create an API key with a Provider such as Infura to deploy to Ethereum Public Testnet. In this guide, we are using Kovan.
 1. Navigate to [Infura.io](https://infura.io/) and create an account
 2. Log in and select "Get started and create your first project to access the Ethereum network"
-3. Create a project and name it appropriately
-4. Then, switch the endpoint to Rinkeby, copy the https URL and paste it into the section named `rinkeby` 
-5. Finally, insert the mnemonic phrase for your testing wallet. You can use a MetaMask instance, and switch the network to Rinkeby on the upper right. DO NOT USE YOUR PERSONAL METAMASK SEED PHRASE; USE A DIFFERENT BROWSER WITH AN INDEPENDENT METAMASK INSTALLATION
-6. You'll need some Kovan-ETH (it is free) in order to pay the gas costs of deploying the contracts on the TestNet; you can use your GitHub account to authenticate to the [KovanFaucet](https://faucet.kovan.network/) and receive 2 Kovan-ETH for free every 24 hours
+3. Create a project and name it appropriately; switch the Network on the Settings page to Kovan
+4. Then, copy the URL and paste it into the section named PROVIDER in the .env file
+
+### Update .env with your wallet information
+5. Insert the address of your testing wallet in the .env section labeled "OWNER"
+6. Finally, insert the mnemonic phrase for your testing wallet into the .env file section named MNEMONIC. You can use ie a MetaMask instance, and switch the network to Kovan on the upper right. DO NOT USE YOUR PERSONAL METAMASK SEED PHRASE; USE A DIFFERENT BROWSER WITH AN INDEPENDENT METAMASK INSTALLATION
+7. You'll need some Kovan-ETH (it is free) in order to pay the gas costs of deploying the contracts on the TestNet; you can use your GitHub account to authenticate to the [KovanFaucet](https://faucet.kovan.network/) and receive 2 Kovan-ETH for free every 24 hours
 
 ### Create an API key with Etherscan 
-1. Navigate to [EtherScan](https://etherscan.io/) and create an account 
-2. Log in and navigate to [MyAPIKey](https://etherscan.io/myapikey) 
-3. Use the Add button to create an API key, and paste it into the indicated section towards the bottom of the `config.ts` file
+8. Navigate to [EtherScan](https://etherscan.io/) and create an account 
+9. Log in and navigate to [MyAPIKey](https://etherscan.io/myapikey) 
+10. Use the Add button to create an API key, and paste it into the indicated section towards the section labeled ETHERSCAN in the .env file
 
-### Verify contents of config.ts; it should look like this:
+### Update .env with the Community Vault contract address
+11. Prior to running this deployment, deploy [BarnBridge-YieldFarming](https://github.com/BarnBridge/BarnBridge-YieldFarming) and then copy the contract address of the CommunityVault contract created into the section labeled CV in the .env file
 
-```js
-        import { NetworksUserConfig } from "hardhat/types";
-        import { EtherscanConfig } from "@nomiclabs/hardhat-etherscan/dist/src/types";
 
-        export const networks: NetworksUserConfig = {
-            // Needed for `solidity-coverage`
-            coverage: {
-                url: "http://localhost:8555"
-            },
-
-            // Kovan
-            kovan: {
-                url: "https://kovan.infura.io/v3/INFURA-API-KEY",
-                chainId: 42,
-                accounts: {
-                    mnemonic: "YourKovanTestWalletMnemonicPhrase",
-                    path: "m/44'/60'/0'/0",
-                    initialIndex: 0,
-                    count: 10
-                },
-                gas: 3716887,
-                gasPrice: 20000000000, // 20 gwei
-                gasMultiplier: 1.5
-            },
-
-            // Mainnet
-            mainnet: {
-                url: "https://mainnet.infura.io/v3/YOUR-INFURA-KEY",
-                chainId: 1,
-                accounts: ["0xaaaa"],
-                gas: "auto",
-                gasPrice: 50000000000,
-                gasMultiplier: 1.5
-            }
-        };
-
-        // Use to verify contracts on Etherscan
-        // https://buidler.dev/plugins/nomiclabs-buidler-etherscan.html
-        export const etherscan: EtherscanConfig = {
-            apiKey: "YourEtherscanAPIKey"
-        };
-
-```
 ## Installing
-
 ### Install NodeJS dependencies which include HardHat
     npm install
     
@@ -156,34 +114,8 @@ Check out more detailed smart contract Slither graphs with all the dependencies:
     npm run coverage
 
 ## Deploying to Kovan    
-### Use deploy-default-facets.ts to deploy the default Diamond Facets
 
-    npx hardhat run --network kovan deploy-default-facets.ts # outputs single token pool factory address
-    
-### Use deploy-upgrade-facet.ts to deploy the Change Rewards facet
-
-    npx hardhat run --network kovan scripts/deploy-factory-multi.js
-    
-### Use kovan-deploy-barn.ts to deploy Barn.sol and Rewards.sol
-Update line 8 in the scripts/kovan-deploy-barn.ts file with the DiamondCutFacet address given by deploy-default-facets.ts
-Update line 9 in the scripts/kovan-deploy-barn.ts file with the DiamondLoupeFacet address given by deploy-default-facets.ts
-Update line 10 in the scripts/kovan-deploy-barn.ts file with the OwnershipFacet address given by deploy-default-facets.ts
-Update line 10 in the scripts/kovan-deploy-barn.ts file with the OwnershipFacet address given by deploy-default-facets.ts
-Update line 14 in the scripts/kovan-deploy-barn.ts file with your own Kovan test wallet address
-UPdate line 15 in the in the scripts/kovan-deploy-barn.ts file with the address given during your deployment of [Governance.sol](https://github.com/BarnBridge/BarnBridge-DAO/blob/master/contracts/Governance.sol)
-**NOTE:** in order to test distribution of rewards, your Kovan wallet must contain Kovan-BOND; contact the Integrations Team for distribution
-
-    npx hardhat run --network kovan scripts/kovan-deploy-barn.ts
-    
-Note the output addresses of Barn and Rewards addresses
-
- 
-### Optional: Transfer ownership of Barn to Governance
-Update line 3 in the scripts/barn-transfer-ownership.ts file with the address given during your deployment of [Governance.sol](https://github.com/BarnBridge/BarnBridge-DAO/blob/master/contracts/Governance.sol)
-Update line 4 in the scripts/barn-transfer-ownership.ts file the Barn address given by kovan-deploy-barn.ts
-
-    npx hardhat run --network kovan scripts/barn-transfer-ownership.ts
-
+    npm run deploy-from-env
 
 ## Audits
 - [QuantStamp](https://github.com/BarnBridge/BarnBridge-PM/blob/master/audits/BarnBridge%20DAO%20audit%20by%20Quanstamp.pdf)
