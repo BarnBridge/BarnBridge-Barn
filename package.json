@@ -12,8 +12,7 @@
     "lint:fix": "yarn run lint:ts:fix",
     "lint:ts": "eslint . --ext .ts",
     "lint:ts:fix": "eslint . --ext .ts --fix",
-    "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
-    "deploy-from-env": "hardhat clean && hardhat run --network env_network scripts/deploy-from-env.ts"
+    "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\""
   },
   "author": "BarnBridge",
   "license": "Apache-2",
@@ -30,7 +29,6 @@
     "@typescript-eslint/parser": "^4.6.0",
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",
-    "dotenv": "^10.0.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
